@@ -1,7 +1,7 @@
 from typing import TypeVar, Optional
 from weighted_graph import WeightedGraph
 from weighted_edge import WeightedEdge
-from generic_search import PriorityQueue
+from ch02.generic_search import PriorityQueue
 
 V = TypeVar('V')
 

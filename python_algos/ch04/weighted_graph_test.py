@@ -1,7 +1,7 @@
 from typing import Optional
 from weighted_graph import WeightedGraph
 from mst import mst, WeightedPath, print_weighted_path
-from dijkstra import dijkstraa, distance_arry_to_vertex_dict, path_dict_to_path
+from dijkstra import dijkstra, distance_arry_to_vertex_dict, path_dict_to_path
 
 if __name__ == "__main__":
     city_graph2: WeightedGraph[str] = WeightedGraph(["Seattle",
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         print_weighted_path(city_graph2, result)
     print("")
 
-    distances, path_dict = dijkstraa(city_graph2, "Los Angeles")
+    distances, path_dict = dijkstra(city_graph2, "Los Angeles")
     name_distance: dict[str, Optional[int]] = distance_arry_to_vertex_dict(city_graph2, distances)
     print("Distance from Los Angeles:")
     for key, value in name_distance.items():

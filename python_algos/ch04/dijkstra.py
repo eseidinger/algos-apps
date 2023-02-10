@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from mst import WeightedPath, print_weighted_path
 from weighted_graph import WeightedGraph
 from weighted_edge import WeightedEdge
-from generic_search import PriorityQueue
+from ch02.generic_search import PriorityQueue
 
 V = TypeVar('V')
 
@@ -18,7 +18,7 @@ class DijkstraNode:
     def __eq__(self, other: "DijkstraNode") -> bool:
         return self.distance == other.distance
     
-def dijkstraa(wg: WeightedGraph[V], root: V) -> tuple[list[Optional[float]], dict[int, WeightedEdge]]:
+def dijkstra(wg: WeightedGraph[V], root: V) -> tuple[list[Optional[float]], dict[int, WeightedEdge]]:
     first: int = wg.index_of(root)
     distances: list[Optional[float]] = [None] * wg.vertex_count
     distances[first] = 0

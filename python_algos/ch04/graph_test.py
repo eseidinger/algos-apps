@@ -1,6 +1,6 @@
 from typing import TypeVar, Optional
 from graph import Graph
-from generic_search import bfs, Node, node_to_path
+from ch02.generic_search import bfs, Node, node_to_path
 
 V = TypeVar('V')
 
