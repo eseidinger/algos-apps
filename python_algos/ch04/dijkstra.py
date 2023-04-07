@@ -36,7 +36,7 @@ def dijkstra(wg: WeightedGraph[V], root: V) -> tuple[list[Optional[float]], dict
                 pq.push(DijkstraNode(we.v, we.weight + dist_u))
     return distances, path_dict
 
-def distance_arry_to_vertex_dict(wg: WeightedGraph[V], distances: list[Optional[float]]) -> dict[V, Optional[float]]:
+def distance_list_to_vertex_dict(wg: WeightedGraph[V], distances: list[Optional[float]]) -> dict[V, Optional[float]]:
     distance_dict: dict[V, Optional[float]] = {}
     for i in range(len(distances)):
         distance_dict[wg.vertex_at(i)] = distances[i]

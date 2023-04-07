@@ -25,7 +25,7 @@ class CSP(Generic[V, D]):
     def add_constraint(self, constraint: Constraint[V, D]) -> None:
         for variable in constraint.variables:
             if variable not in self.variables:
-                raise LookupError("Variable in constraint not in CSP")
+                raise LookupError("Variable in constraint not in CSP.")
             else:
                 self.constraints[variable].append(constraint)
 

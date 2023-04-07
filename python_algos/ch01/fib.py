@@ -50,6 +50,8 @@ def fib1(n: int) -> int:
     return fib1(n - 1) + fib1(n - 2)
 
 
+memo: Dict[int, int] = {0: 0, 1: 1}
+
 def fib2(n: int) -> int:
     """
     Calculates the Fibonacci number of a integer n.
@@ -90,7 +92,6 @@ def fib2(n: int) -> int:
         raise ValueError("n must be exact integer")
     if n+1 == n:  # catch a value like 1e300
         raise OverflowError("n too large")
-    memo: Dict[int, int] = {0: 0, 1: 1}
     if n not in memo:
         memo[n] = fib2(n - 1) + fib2(n - 2)
     return memo[n]

@@ -70,6 +70,16 @@ class Maze:
         self._grid[self.start.row][self.start.column] = Cell.START
         self._grid[self.goal.row][self.goal.column] = Cell.GOAL
 
+    def euclidean_distance(self, ml: MazeLocation) -> float:
+        xdist: int = ml.column - self.goal.column
+        ydist: int = ml.row - self.goal.row
+        return sqrt((xdist * xdist) + (ydist * ydist))
+
+    def manhatten_distance(self, ml: MazeLocation) -> float:
+        xdist: int = abs(ml.column - self.goal.column)
+        ydist: int = abs(ml.row - self.goal.row)
+        return (xdist + ydist)
+
 def euclidean_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
     def distance(ml: MazeLocation) -> float:
         xdist: int = ml.column - goal.column

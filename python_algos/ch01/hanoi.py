@@ -21,32 +21,25 @@ tower_c: Stack[int] = Stack()
 for i in range(1, num_discs + 1):
     tower_a.push(i)
 
+def print_towers():
+    print(tower_a)
+    print(tower_b)
+    print(tower_c)
+    print()
+
+
 def hanoi(begin: Stack[int], end: Stack[int], temp: Stack[int], n: int) -> None:
     if n == 1:
         end.push(begin.pop())
     else:
         hanoi(begin, temp, end, n - 1)
-        print(tower_a)
-        print(tower_b)
-        print(tower_c)
-        print()
+        print_towers()
         hanoi(begin, end, temp, 1)
-        print(tower_a)
-        print(tower_b)
-        print(tower_c)
-        print()
+        print_towers()
         hanoi(temp, end, begin, n - 1)
-        print(tower_a)
-        print(tower_b)
-        print(tower_c)
-        print()
+        print_towers()
 
 if __name__ == "__main__":
-    print(tower_a)
-    print(tower_b)
-    print(tower_c)
-    print()
+    print_towers()
     hanoi(tower_a, tower_b, tower_c, num_discs)
-    print(tower_a)
-    print(tower_b)
-    print(tower_c)
+    print_towers()
