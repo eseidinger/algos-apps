@@ -27,6 +27,11 @@
                 "glob": "**/*",
                 "input": "./node_modules/pyodide",
                 "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "../python_algos",
+                "output": "/python_algos"
               }
             ],
             "styles": [

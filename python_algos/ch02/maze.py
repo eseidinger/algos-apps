@@ -94,7 +94,7 @@ def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
         return (xdist + ydist)
     return distance
 
-if __name__ == "__main__":
+def main() -> None:
     m: Maze = Maze(sparseness=0.2)
     print(m)
     solution1: Optional[Node[MazeLocation]] = dfs(m.start, m.goal_test, m.successors)
@@ -126,3 +126,6 @@ if __name__ == "__main__":
         m.mark(path3)
         print(m)
         m.clear(path3)
+
+if __name__ == "__main__":
+    main()
