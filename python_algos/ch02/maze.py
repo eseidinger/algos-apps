@@ -75,7 +75,7 @@ class Maze:
         ydist: int = ml.row - self.goal.row
         return sqrt((xdist * xdist) + (ydist * ydist))
 
-    def manhatten_distance(self, ml: MazeLocation) -> float:
+    def manhattan_distance(self, ml: MazeLocation) -> float:
         xdist: int = abs(ml.column - self.goal.column)
         ydist: int = abs(ml.row - self.goal.row)
         return (xdist + ydist)
@@ -87,7 +87,7 @@ def euclidean_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
         return sqrt((xdist * xdist) + (ydist * ydist))
     return distance
 
-def manhatten_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
+def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
     def distance(ml: MazeLocation) -> float:
         xdist: int = abs(ml.column - goal.column)
         ydist: int = abs(ml.row - goal.row)
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         m.clear(path2)
         print(m)
 
-    distance: Callable[[MazeLocation], float] = manhatten_distance(m.goal)
+    distance: Callable[[MazeLocation], float] = manhattan_distance(m.goal)
     solution3: Optional[Node[MazeLocation]] = astar(m.start, m.goal_test, m.successors, distance)
     if solution3 is None:
         print("No solution found with A*!")
