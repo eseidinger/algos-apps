@@ -1,6 +1,14 @@
 {
   "python.envFile": "${workspaceFolder}/.env",
   "terminal.integrated.env.linux": {
-    "PYTHONPATH": "./python_algos"
-  }
+    "PYTHONPATH": "./python_algos",
+    "CHROME_BIN": "chromium"
+  },
+  "cSpell.words": [
+    "astar",
+    "devkit",
+    "pyodide",
+    "xdist",
+    "ydist"
+  ]
 }
