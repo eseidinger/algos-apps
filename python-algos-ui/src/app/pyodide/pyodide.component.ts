@@ -13,8 +13,20 @@ export class PyodideComponent implements OnInit {
     await this.loadFile('/python_algos/ch02/maze.py', 'maze.py', pyodide);
     console.log(pyodide.runPython(`
       import maze
-      maze.main()
-    `));
+      from maze import Maze, MazeLocation
+      from generic_search import DFS, node_to_path
+      m = Maze()
+      dfs = DFS(m.start, m.goal_test, m.successors)
+      solution = dfs.solve()
+      if solution is None:
+        print("No solution found with depth-first search!")
+      else:
+        path: list[MazeLocation] = node_to_path(solution)
+        m.mark(path)
+        print(m)
+        m.clear(path)
+        print(m)
+  `));
   }
 
   // Load a file from an URL and add it to the virtual filesystem exposed to
