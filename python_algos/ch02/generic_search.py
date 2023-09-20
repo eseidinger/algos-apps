@@ -3,27 +3,34 @@ from heapq import heappush, heappop
 
 T = TypeVar('T')
 
+
 def linear_contains(iterable: Iterable[T], key: T) -> bool:
     for item in iterable:
         if item == key:
             return True
     return False
 
+
 C = TypeVar('C', bound='Comparable')
+
 
 class Comparable(Protocol):
     def __eq__(self, other: any) -> bool:
         ...
+
     def __lt__(self: C, other: C) -> bool:
         ...
+
     def __gt__(self: C, other: C) -> bool:
         return (not self < other) and self != other
-    
+
     def __le__(self: C, other: C) -> bool:
         return self < other or self == other
+
     def __ge__(self: C, other: C) -> bool:
         return not self < other
-    
+
+
 def binary_contains(sequence: Sequence[C], key: C) -> bool:
     low: int = 0
     high: int = len(sequence) - 1
@@ -37,6 +44,7 @@ def binary_contains(sequence: Sequence[C], key: C) -> bool:
             return True
     return False
 
+
 class Stack(Generic[T]):
     def __init__(self) -> None:
         self._container: list[T] = []
@@ -44,16 +52,17 @@ class Stack(Generic[T]):
     @property
     def empty(self) -> bool:
         return not self._container
-    
+
     def push(self, item: T) -> None:
         self._container.append(item)
 
     def pop(self) -> T:
         return self._container.pop()
-    
+
     def __repr__(self) -> str:
         return repr(self._container)
-    
+
+
 class Node(Generic[T]):
     def __init__(self, state: T, parent: Optional["Node"],
                  cost: float = 0.0, heuristic: float = 0.0) -> None:
@@ -64,7 +73,8 @@ class Node(Generic[T]):
 
     def __lt__(self, other: "Node") -> bool:
         return (self.cost + self.heuristic) < (other.cost + other.heuristic)
-    
+
+
 def dfs(initial: T, goal_test: Callable[[T], bool],
         successors: Callable[[T], list[T]]) -> Optional[Node[T]]:
     frontier: Stack[Node[T]] = Stack()
@@ -83,6 +93,36 @@ def dfs(initial: T, goal_test: Callable[[T], bool],
             frontier.push(Node(child, current_node))
     return None
 
+
+class DFS(Generic[T]):
+    def __init__(self, initial: T, goal_test: Callable[[T], bool],
+                 successors: Callable[[T], list[T]]) -> None:
+        self._frontier: Stack[Node[T]] = Stack()
+        self._frontier.push(Node(initial, None))
+        self._explored: set[T] = {initial}
+        self._goal_test: Callable[[T], bool] = goal_test
+        self._successors: Callable[[T], list[T]] = successors
+        self._solution: Optional[Node[T]] = None
+
+    def step(self) -> bool:
+        current_node: Node[T] = self._frontier.pop()
+        current_state: T = current_node.state
+        if self._goal_test(current_state):
+            self._solution = current_node
+            return True
+        for child in self._successors(current_state):
+            if child in self._explored:
+                continue
+            self._explored.add(child)
+            self._frontier.push(Node(child, current_node))
+        return False
+
+    def solve(self) -> Optional[Node[T]]:
+        while not self._frontier.empty and self._solution is None:
+            self.step()
+        return self._solution
+
+
 def node_to_path(node: Node[T]) -> list[T]:
     path: list[T] = [node.state]
     while node.parent is not None:
@@ -91,6 +131,7 @@ def node_to_path(node: Node[T]) -> list[T]:
     path.reverse()
     return path
 
+
 class Queue(Generic[T]):
     def __init__(self) -> None:
         self._container: Deque[T] = Deque()
@@ -98,16 +139,16 @@ class Queue(Generic[T]):
     @property
     def empty(self) -> bool:
         return not self._container
-    
+
     def push(self, item: T) -> None:
         self._container.append(item)
 
     def pop(self) -> T:
         return self._container.popleft()
-    
+
     def __repr__(self) -> str:
         return repr(self._container)
-    
+
 
 def bfs(initial: T, goal_test: Callable[[T], bool],
         successors: Callable[[T], list[T]]) -> Optional[Node[T]]:
@@ -127,6 +168,7 @@ def bfs(initial: T, goal_test: Callable[[T], bool],
             frontier.push(Node(child, current_node))
     return None
 
+
 class PriorityQueue(Generic[T]):
     def __init__(self) -> None:
         self._container: list[T] = []
@@ -134,19 +176,20 @@ class PriorityQueue(Generic[T]):
     @property
     def empty(self) -> bool:
         return not self._container
-    
+
     def push(self, item: T) -> None:
         heappush(self._container, item)
 
     def pop(self) -> T:
         return heappop(self._container)
-    
+
     def __repr__(self) -> str:
         return repr(self._container)
 
+
 def astar(initial: T, goal_test: Callable[[T], bool],
-        successors: Callable[[T], list[T]],
-        heuristic: Callable[[T], float]) -> Optional[Node[T]]:
+          successors: Callable[[T], list[T]],
+          heuristic: Callable[[T], float]) -> Optional[Node[T]]:
     frontier: PriorityQueue[Node[T]] = PriorityQueue()
     frontier.push(Node(initial, None, 0.0, heuristic(initial)))
     explored: dict[T, float] = {initial: 0.0}
@@ -160,5 +203,6 @@ def astar(initial: T, goal_test: Callable[[T], bool],
             new_cost: float = current_node.cost + 1
             if child not in explored or explored[child] > new_cost:
                 explored[child] = new_cost
-                frontier.push(Node(child, current_node, new_cost, heuristic(child)))
+                frontier.push(Node(child, current_node,
+                              new_cost, heuristic(child)))
     return None

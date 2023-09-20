@@ -26,7 +26,8 @@ class Maze:
         self._columns: int = columns
         self.start: MazeLocation = start
         self.goal: MazeLocation = goal
-        self._grid: list[list[Cell]] = [[Cell.EMPTY for c in range(columns)] for r in range(rows)]
+        self._grid: list[list[Cell]] = [
+            [Cell.EMPTY for c in range(columns)] for r in range(rows)]
         self._randomly_fill(rows, columns, sparseness)
         self._grid[start.row][start.column] = Cell.START
         self._grid[goal.row][goal.column] = Cell.GOAL
@@ -80,12 +81,14 @@ class Maze:
         ydist: int = abs(ml.row - self.goal.row)
         return (xdist + ydist)
 
+
 def euclidean_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
     def distance(ml: MazeLocation) -> float:
         xdist: int = ml.column - goal.column
         ydist: int = ml.row - goal.row
         return sqrt((xdist * xdist) + (ydist * ydist))
     return distance
+
 
 def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
     def distance(ml: MazeLocation) -> float:
@@ -94,10 +97,12 @@ def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
         return (xdist + ydist)
     return distance
 
+
 def main() -> None:
     m: Maze = Maze(sparseness=0.2)
     print(m)
-    solution1: Optional[Node[MazeLocation]] = dfs(m.start, m.goal_test, m.successors)
+    solution1: Optional[Node[MazeLocation]] = dfs(
+        m.start, m.goal_test, m.successors)
     if solution1 is None:
         print("No solution found with depth-first search!")
     else:
@@ -107,7 +112,8 @@ def main() -> None:
         m.clear(path1)
         print(m)
 
-    solution2: Optional[Node[MazeLocation]] = bfs(m.start, m.goal_test, m.successors)
+    solution2: Optional[Node[MazeLocation]] = bfs(
+        m.start, m.goal_test, m.successors)
     if solution2 is None:
         print("No solution found with breadth-first search!")
     else:
@@ -118,7 +124,8 @@ def main() -> None:
         print(m)
 
     distance: Callable[[MazeLocation], float] = manhattan_distance(m.goal)
-    solution3: Optional[Node[MazeLocation]] = astar(m.start, m.goal_test, m.successors, distance)
+    solution3: Optional[Node[MazeLocation]] = astar(
+        m.start, m.goal_test, m.successors, distance)
     if solution3 is None:
         print("No solution found with A*!")
     else:
@@ -126,6 +133,7 @@ def main() -> None:
         m.mark(path3)
         print(m)
         m.clear(path3)
+
 
 if __name__ == "__main__":
     main()
