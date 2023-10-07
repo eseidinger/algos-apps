@@ -3,7 +3,7 @@ from enum import Enum
 import random
 from math import sqrt
 
-from generic_search import Node, dfs, node_to_path, bfs, astar
+from generic_search import Node, dfs, node_to_path, bfs, astar, DFS
 
 
 class Cell(str, Enum):
@@ -12,6 +12,8 @@ class Cell(str, Enum):
     START = "S"
     GOAL = "G"
     PATH = "*"
+    FRONTIER = "O"
+    EXPLORED = "."
 
 
 class MazeLocation(NamedTuple):
@@ -65,6 +67,18 @@ class Maze:
         self._grid[self.start.row][self.start.column] = Cell.START
         self._grid[self.goal.row][self.goal.column] = Cell.GOAL
 
+    def mark_frontier(self, frontier: list[MazeLocation]):
+        for maze_location in frontier:
+            self._grid[maze_location.row][maze_location.column] = Cell.FRONTIER
+        self._grid[self.start.row][self.start.column] = Cell.START
+        self._grid[self.goal.row][self.goal.column] = Cell.GOAL
+
+    def mark_explored(self, explored: list[MazeLocation]):
+        for maze_location in explored:
+            self._grid[maze_location.row][maze_location.column] = Cell.EXPLORED
+        self._grid[self.start.row][self.start.column] = Cell.START
+        self._grid[self.goal.row][self.goal.column] = Cell.GOAL
+
     def clear(self, path: list[MazeLocation]):
         for maze_location in path:
             self._grid[maze_location.row][maze_location.column] = Cell.EMPTY
@@ -96,6 +110,38 @@ def manhattan_distance(goal: MazeLocation) -> Callable[[MazeLocation], float]:
         ydist: int = abs(ml.row - goal.row)
         return (xdist + ydist)
     return distance
+
+
+def main_step_by_step() -> None:
+    m: Maze = Maze(sparseness=0.2)
+    print(m)
+    dfs: DFS = DFS(m.start, m.goal_test, m.successors)
+    while not dfs.step():
+        current_solution: Optional[Node[MazeLocation]] = dfs.currentNode
+        current_path = node_to_path(current_solution)
+        current_frontier = [ n.state for n in dfs.frontier.content_copy() ]
+        m.mark_explored(dfs.explored)
+        m.mark_frontier(current_frontier)
+        m.mark(current_path)
+        print(m)
+        print(current_frontier)
+        m.clear(dfs.explored)
+        m.clear(current_frontier)
+        m.clear(current_path)
+    if dfs.solution is None:
+        print("No solution found with depth-first search!")
+    else:
+        solution: Optional[Node[MazeLocation]] = dfs.solution
+        path = node_to_path(solution)
+        current_frontier = [ n.state for n in dfs.frontier.content_copy() ]
+        m.mark_explored(dfs.explored)
+        m.mark_frontier(current_frontier)
+        m.mark(path)
+        print(m)
+        print(current_frontier)
+        m.clear(dfs.explored)
+        m.clear(current_frontier)
+        m.clear(path)
 
 
 def main() -> None:
@@ -136,4 +182,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_step_by_step()

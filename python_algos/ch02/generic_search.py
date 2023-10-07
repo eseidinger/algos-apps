@@ -52,6 +52,9 @@ class Stack(Generic[T]):
     @property
     def empty(self) -> bool:
         return not self._container
+    
+    def content_copy(self) -> list[T]:
+        return self._container.copy()
 
     def push(self, item: T) -> None:
         self._container.append(item)
@@ -98,28 +101,47 @@ class DFS(Generic[T]):
     def __init__(self, initial: T, goal_test: Callable[[T], bool],
                  successors: Callable[[T], list[T]]) -> None:
         self._frontier: Stack[Node[T]] = Stack()
-        self._frontier.push(Node(initial, None))
+        self._current_node: Optional[Node[T]] = Node(initial, None)
+        self._frontier.push(self._current_node)
         self._explored: set[T] = {initial}
         self._goal_test: Callable[[T], bool] = goal_test
         self._successors: Callable[[T], list[T]] = successors
         self._solution: Optional[Node[T]] = None
 
+    @property
+    def currentNode(self) -> Optional[Node[T]]:
+        return self._current_node
+    
+    @property
+    def solution(self) -> Optional[Node[T]]:
+        return self._solution
+    
+    @property
+    def frontier(self) -> Stack[Node[T]]:
+        return self._frontier
+    
+    @property
+    def explored(self) -> set[T]:
+        return self._explored
+
     def step(self) -> bool:
-        current_node: Node[T] = self._frontier.pop()
-        current_state: T = current_node.state
+        if self._frontier.empty:
+            return True
+        self._current_node: Node[T] = self._frontier.pop()
+        current_state: T = self._current_node.state
         if self._goal_test(current_state):
-            self._solution = current_node
+            self._solution = self._current_node
             return True
         for child in self._successors(current_state):
             if child in self._explored:
                 continue
             self._explored.add(child)
-            self._frontier.push(Node(child, current_node))
+            self._frontier.push(Node(child, self._current_node))
         return False
 
     def solve(self) -> Optional[Node[T]]:
-        while not self._frontier.empty and self._solution is None:
-            self.step()
+        while not self.step():
+            pass
         return self._solution
 
 
