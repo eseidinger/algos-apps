@@ -1,9 +1,9 @@
 from typing import TypeVar, Optional
 from dataclasses import dataclass
-from mst import WeightedPath, print_weighted_path
-from weighted_graph import WeightedGraph
-from weighted_edge import WeightedEdge
-from ch02.generic_search import PriorityQueue
+from kopec.ch04.mst import WeightedPath, print_weighted_path
+from kopec.ch04.weighted_graph import WeightedGraph
+from kopec.ch04.weighted_edge import WeightedEdge
+from kopec.ch02.generic_search import PriorityQueue
 
 V = TypeVar('V')
 

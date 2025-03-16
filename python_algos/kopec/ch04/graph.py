@@ -1,5 +1,5 @@
 from typing import TypeVar, Generic, Optional
-from edge import Edge
+from kopec.ch04.edge import Edge
 
 V = TypeVar('V')
 

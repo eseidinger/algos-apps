@@ -1,5 +1,5 @@
-from chromosome import Chromosome
-from genetic_algorithm import GeneticAlgorithm
+from kopec.ch05.chromosome import Chromosome
+from kopec.ch05.genetic_algorithm import GeneticAlgorithm
 from random import randrange, random
 from copy import deepcopy
 

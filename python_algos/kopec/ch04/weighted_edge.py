@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from edge import Edge
+from kopec.ch04.edge import Edge
 
 @dataclass
 class WeightedEdge(Edge):

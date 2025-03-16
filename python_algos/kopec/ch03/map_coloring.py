@@ -1,4 +1,4 @@
-from csp import Constraint, CSP
+from kopec.ch03.csp import Constraint, CSP
 from typing import Optional
 
 class MapColoringConstraint(Constraint[str, str]):

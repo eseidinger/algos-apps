@@ -1,6 +1,6 @@
 from typing import TypeVar, Generic
-from graph import Graph
-from weighted_edge import WeightedEdge
+from kopec.ch04.graph import Graph
+from kopec.ch04.weighted_edge import WeightedEdge
 
 V = TypeVar('V')
 

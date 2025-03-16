@@ -1,6 +1,6 @@
 from typing import TypeVar, Optional
-from graph import Graph
-from ch02.generic_search import bfs, Node, node_to_path
+from kopec.ch04.graph import Graph
+from kopec.ch02.generic_search import bfs, Node, node_to_path
 
 V = TypeVar('V')
 

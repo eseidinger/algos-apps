@@ -4,7 +4,7 @@ from enum import Enum
 from random import choices, random
 from heapq import nlargest
 from statistics import mean
-from chromosome import Chromosome
+from kopec.ch05.chromosome import Chromosome
 
 C = TypeVar('C', bound=Chromosome)
 

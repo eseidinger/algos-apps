@@ -3,7 +3,7 @@ from enum import Enum
 import random
 from math import sqrt
 
-from generic_search import Node, dfs, node_to_path, bfs, astar, DFS
+from kopec.ch02.generic_search import Node, dfs, node_to_path, bfs, astar, DFS
 
 
 class Cell(str, Enum):
