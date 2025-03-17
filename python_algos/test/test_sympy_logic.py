@@ -10,7 +10,6 @@ from python_algos.complexity.varianttree import (
     Part,
     minterms_for_boolean,
     get_extended_minterms,
-    get_boolean_expression_for_irrelevant_symbols,
     get_boolean_expression_for_relevant_symbols,
 )
 
@@ -75,31 +74,6 @@ def test_boolean_expression_from_minterms():
     assert sop_form == A | C
 
 
-def test_get_boolean_expression_for_irrelevant_symbols():
-    # create a logic expression from minterms and dont_cares
-    # assert the expression
-    A, B, C = symbols("A, B, C")
-    bool_expr = B & (A | C)
-
-    irrelevant_symbols = [B]
-    irrelevant_expr = get_boolean_expression_for_irrelevant_symbols(
-        bool_expr, irrelevant_symbols
-    )
-    assert irrelevant_expr == A | C
-
-    irrelevant_symbols = [A]
-    irrelevant_expr = get_boolean_expression_for_irrelevant_symbols(
-        bool_expr, irrelevant_symbols
-    )
-    assert irrelevant_expr == B
-
-    irrelevant_symbols = [C]
-    irrelevant_expr = get_boolean_expression_for_irrelevant_symbols(
-        bool_expr, irrelevant_symbols
-    )
-    assert irrelevant_expr == B
-
-
 def test_get_boolean_expression_for_relevant_symobls():
     # create a logic expression from minterms and dont_cares
     # assert the expression
@@ -112,17 +86,17 @@ def test_get_boolean_expression_for_relevant_symobls():
     )
     assert relevant_expr == B
 
-    relevant_symbols = [A]
+    relevant_symbols = [A, C]
     relevant_expr = get_boolean_expression_for_relevant_symbols(
         bool_expr, relevant_symbols
     )
-    assert relevant_expr
+    assert relevant_expr == A | C
 
     relevant_symbols = [C]
     relevant_expr = get_boolean_expression_for_relevant_symbols(
         bool_expr, relevant_symbols
     )
-    assert relevant_expr
+    assert relevant_expr == True
 
 
 def test_evaluate_variant():
