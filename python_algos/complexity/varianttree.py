@@ -55,8 +55,8 @@ class Variant:
             if attr.value is not None
         }
 
-    def is_descendant_of(self, other_variant: Self) -> bool:
-        """Return True if the variant is a descendant of another variant"""
+    def is_subvariant_of(self, other_variant: Self) -> bool:
+        """Return True if the variant is a subvariant of another variant"""
         return all(
             self_attr.value == other_attr.value
             for self_attr, other_attr in zip(
@@ -65,12 +65,12 @@ class Variant:
             if other_attr.value is not None
         )
 
-    def is_ancestor_of(self, other_variant: Self) -> bool:
-        """Return True if the variant is an ancestor of another variant"""
-        return other_variant.is_descendant_of(self)
+    def is_supervariant_of(self, other_variant: Self) -> bool:
+        """Return True if the variant is an supervariant of another variant"""
+        return other_variant.is_subvariant_of(self)
 
-    def create_descendant(self, symbol: Symbol, value: bool) -> Self:
-        """Return a descendant variant with a new attribute"""
+    def create_subvariant(self, symbol: Symbol, value: bool) -> Self:
+        """Return a subvariant variant with a new attribute value"""
         new_variant = deepcopy(self)
         for attribute in new_variant.attributes:
             if attribute.symbol == symbol:
@@ -80,18 +80,17 @@ class Variant:
     def is_possible(self, possible_variants: list[Self]) -> bool:
         """Return True if the variant is possible"""
         return any(
-            self.is_ancestor_of(possible_variant)
+            self.is_supervariant_of(possible_variant)
             for possible_variant in possible_variants
         )
 
 
-class Part:
+class Condition:
     """
-    A class to represent a part
+    A class to represent a condition
     """
 
-    def __init__(self, name, condition: Boolean):
-        self.name = name
+    def __init__(self, condition: Boolean):
         self.condition = condition
 
     def test_condition(self, variant: Variant) -> bool:
@@ -103,7 +102,7 @@ class Part:
             self.condition, relevant_symbols
         )
         return relevant_condition.subs(variant.to_dict())
-    
+
     def get_relevant_attributes(self, variant: Variant) -> list[Symbol]:
         """Return the set attributes in the condition"""
         relevant_symbols = [
@@ -142,6 +141,16 @@ class Part:
             if minterm_vector_sum[i] == len(minterms)
         ]
 
+
+class Part(Condition):
+    """
+    A class to represent a part
+    """
+
+    def __init__(self, name: str, condition: Boolean):
+        super().__init__(condition)
+        self.name = name
+
     def __str__(self):
         return self.name
 
@@ -154,12 +163,12 @@ class VariantNode:
     A class to represent a node in a variant tree
     """
 
-    def __init__(self, variant: Variant, all_parts: list[Part]):
+    def __init__(self, variant: Variant, all_conditions: list[Condition]):
         self.variant = variant
-        self.parts = []
-        for part in all_parts:
-            if part.test_condition(variant):
-                self.parts.append(part)
+        self.conditions = []
+        for condition in all_conditions:
+            if condition.test_condition(variant):
+                self.conditions.append(condition)
         self.children = []
 
     def add_child(self, child):
@@ -167,44 +176,56 @@ class VariantNode:
         self.children.append(child)
 
     def __str__(self):
-        relevant_attributes = [part.get_relevant_attributes(self.variant) for part in self.parts]
-        flat_relevant_attributes = {item for sublist in relevant_attributes for item in sublist}
-        necessary_attributes =[part.get_necessary_attributes(self.variant) for part in self.parts]
-        flat_necessary_attributes = {item for sublist in necessary_attributes for item in sublist}
-        return f"{self.variant} -> {self.parts} -> {flat_relevant_attributes} -> {flat_necessary_attributes}"
+        relevant_attributes = [
+            part.get_relevant_attributes(self.variant) for part in self.conditions
+        ]
+        flat_relevant_attributes = {
+            item for sublist in relevant_attributes for item in sublist
+        }
+        necessary_attributes = [
+            part.get_necessary_attributes(self.variant) for part in self.conditions
+        ]
+        flat_necessary_attributes = {
+            item for sublist in necessary_attributes for item in sublist
+        }
+        return f"{self.variant} -> {self.conditions} -> {flat_relevant_attributes} -> {flat_necessary_attributes}"
 
 
 def add_nodes(
     variant_node: VariantNode,
     possible_variants: list[Variant],
     symbol_order: list[Symbol],
-    parts: list[Part],
+    conditions: list[Condition],
 ):
     """Add nodes to a variant node"""
     for value in [True, False]:
-        new_variant = variant_node.variant.create_descendant(symbol_order[0], value)
+        new_variant = variant_node.variant.create_subvariant(symbol_order[0], value)
         if new_variant.is_possible(possible_variants):
-            new_node = VariantNode(new_variant, parts)
+            new_node = VariantNode(new_variant, conditions)
             variant_node.add_child(new_node)
             if len(symbol_order) > 1:
                 add_nodes(
                     new_node,
                     possible_variants,
                     [symbol_order[i] for i in range(1, len(symbol_order))],
-                    parts,
+                    conditions,
                 )
 
 
 def construct_variant_tree(
-    possible_variants: list[Variant], symbol_order: list[Symbol], parts: list[Part]
+    possible_variants: list[Variant],
+    symbol_order: list[Symbol],
+    conditions: list[Condition],
 ) -> VariantNode:
-    """Construct a variant tree from possible variants and parts"""
-    root = VariantNode(Variant([Attribute(symbol) for symbol in symbol_order]), parts)
+    """Construct a variant tree from possible variants and conditions that need to be satisfied"""
+    root = VariantNode(
+        Variant([Attribute(symbol) for symbol in symbol_order]), conditions
+    )
     add_nodes(
         root,
         possible_variants,
         [symbol_order[i] for i in range(0, len(symbol_order))],
-        parts,
+        conditions,
     )
     return root
 
