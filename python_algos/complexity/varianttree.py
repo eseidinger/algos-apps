@@ -1,16 +1,16 @@
 """
 This modules contains classes and functions to create a variant tree from a list of possible
 variants and a list of parts. The variant tree is a hierarchical structure where each node
-represents a variantand its children represent the possible descendants of the variant.
+represents a variant and its children represent the possible descendants of the variant.
 The parts are used to test if a variant satisfies a condition and to get the set attributes
 in the condition.
 """
 
 from copy import deepcopy
 from typing import Optional, Self
-from sympy import symbols, sympify, Symbol
+from sympy import symbols, Symbol
 from sympy.logic import SOPform
-from sympy.logic.boolalg import Boolean, truth_table, term_to_integer, integer_to_term
+from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer
 
 
 class Attribute:
@@ -98,48 +98,42 @@ class Condition:
         relevant_symbols = [
             attr.symbol for attr in variant.attributes if attr.value is not None
         ]
-        relevant_condition = get_boolean_expression_for_relevant_symbols(
-            self.condition, relevant_symbols
+        relevant_condition = self._get_boolean_expression_for_relevant_symbols(
+            relevant_symbols
         )
         return relevant_condition.subs(variant.to_dict())
 
-    def get_relevant_attributes(self, variant: Variant) -> list[Symbol]:
-        """Return the set attributes in the condition"""
-        relevant_symbols = [
-            attr.symbol for attr in variant.attributes if attr.value is not None
-        ]
-        relevant_condition = get_boolean_expression_for_relevant_symbols(
-            self.condition, relevant_symbols
-        )
-        all_symbols = [attr.symbol for attr in variant.attributes]
-        minterms = minterms_for_boolean(relevant_condition, all_symbols)
-        minterm_lists = [
-            integer_to_term(minterm, len(all_symbols)) for minterm in minterms
-        ]
-        minterm_vector_sum = [sum(minterm) for minterm in zip(*minterm_lists)]
-        return [
-            all_symbols[i] for i in range(len(all_symbols)) if minterm_vector_sum[i] > 0
-        ]
+    def _get_minterms(self, ordered_symbols: list[Symbol]) -> list[int]:
+        """Convert a boolean expression to a list of minterms"""
+        minterms = []
+        tt = truth_table(self.condition, ordered_symbols)
+        for row in tt:
+            if row[1]:
+                minterms.append(term_to_integer(row[0]))
+        sorted_minterms = sorted(minterms)
+        return sorted_minterms
 
-    def get_necessary_attributes(self, variant) -> list[Symbol]:
-        """Return attributes necessary for the condition"""
-        relevant_symbols = [
-            attr.symbol for attr in variant.attributes if attr.value is not None
-        ]
-        relevant_condition = get_boolean_expression_for_relevant_symbols(
-            self.condition, relevant_symbols
+    def _get_boolean_expression_for_relevant_symbols(
+        self, relevant_symbols=list[Symbol]
+    ) -> Boolean:
+        """
+        Return a boolean expression where only the relevant symbols
+        have an influence on the result
+        """
+        if len(relevant_symbols) == 0:
+            return BooleanTrue()
+        ordered_symbols = relevant_symbols.copy()
+        ordered_symbols.extend(
+            [
+                symbol
+                for symbol in self.condition.free_symbols
+                if symbol not in relevant_symbols
+            ]
         )
-        all_symbols = [attr.symbol for attr in variant.attributes]
-        minterms = minterms_for_boolean(relevant_condition, all_symbols)
-        minterm_lists = [
-            integer_to_term(minterm, len(all_symbols)) for minterm in minterms
-        ]
-        minterm_vector_sum = [sum(minterm) for minterm in zip(*minterm_lists)]
-        return [
-            all_symbols[i]
-            for i in range(len(all_symbols))
-            if minterm_vector_sum[i] == len(minterms)
-        ]
+        minterms = self._get_minterms(ordered_symbols)
+        nof_irreleveant_symobls = len(ordered_symbols) - len(relevant_symbols)
+        minified_minterms = {minterm >> nof_irreleveant_symobls for minterm in minterms}
+        return SOPform(relevant_symbols, minified_minterms)
 
 
 class Part(Condition):
@@ -176,19 +170,7 @@ class VariantNode:
         self.children.append(child)
 
     def __str__(self):
-        relevant_attributes = [
-            part.get_relevant_attributes(self.variant) for part in self.conditions
-        ]
-        flat_relevant_attributes = {
-            item for sublist in relevant_attributes for item in sublist
-        }
-        necessary_attributes = [
-            part.get_necessary_attributes(self.variant) for part in self.conditions
-        ]
-        flat_necessary_attributes = {
-            item for sublist in necessary_attributes for item in sublist
-        }
-        return f"{self.variant} -> {self.conditions} -> {flat_relevant_attributes} -> {flat_necessary_attributes}"
+        return f"{self.variant} -> {self.conditions}"
 
 
 def add_nodes(
@@ -228,61 +210,6 @@ def construct_variant_tree(
         conditions,
     )
     return root
-
-
-def string_to_boolean(string: str) -> Boolean:
-    """Convert a string to a sympy boolean expression"""
-    return sympify(string)
-
-
-def minterms_for_boolean(
-    bool_expr: Boolean, ordered_symbols: list[Symbol]
-) -> list[int]:
-    """Convert a boolean expression to a list of minterms"""
-    minterms = []
-    tt = truth_table(bool_expr, ordered_symbols)
-    for row in tt:
-        if row[1]:
-            minterms.append(term_to_integer(row[0]))
-    sorted_minterms = sorted(minterms)
-    return sorted_minterms
-
-
-def get_extended_minterms(
-    minterms: list[int], nof_irreleveant_symobls: int
-) -> list[int]:
-    """Return an extended list of minterms where the LSBs have no influence on the result"""
-    minterm_lsbs = list(range(2**nof_irreleveant_symobls))
-    minterms_msbs = {
-        minterm >> nof_irreleveant_symobls << nof_irreleveant_symobls
-        for minterm in minterms
-    }
-    extended_minterms = set()
-    for msb in minterms_msbs:
-        extended_minterms.update([msb + lsb for lsb in minterm_lsbs])
-    return sorted(list(extended_minterms))
-
-
-def get_boolean_expression_for_relevant_symbols(
-    boolean_expr: Boolean, relevant_symbols=list[Symbol]
-) -> Boolean:
-    """
-    Return a boolean expression where only the relevant symbols
-    have an influence on the result
-    """
-    ordered_symbols = relevant_symbols.copy()
-    ordered_symbols.extend(
-        [
-            symbol
-            for symbol in boolean_expr.free_symbols
-            if symbol not in relevant_symbols
-        ]
-    )
-    minterms = minterms_for_boolean(boolean_expr, ordered_symbols)
-    extended_minterms = get_extended_minterms(
-        minterms, len(ordered_symbols) - len(relevant_symbols)
-    )
-    return SOPform(ordered_symbols, extended_minterms)
 
 
 def print_tree(node, marker_str="+- ", level_markers=None):

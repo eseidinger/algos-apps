@@ -1,16 +1,13 @@
 # a pytest module to test creeating a logic expression using sympy logic
 
 from sympy import symbols
-from sympy.logic import SOPform
-from sympy.logic.boolalg import Boolean, to_dnf
+from sympy.logic.boolalg import BooleanTrue, to_dnf
 
 from python_algos.complexity.varianttree import (
     Attribute,
     Variant,
+    Condition,
     Part,
-    minterms_for_boolean,
-    get_extended_minterms,
-    get_boolean_expression_for_relevant_symbols,
 )
 
 
@@ -30,48 +27,10 @@ def test_minterms_for_boolean():
     # assert the minterms
     A, B, C = symbols("A, B, C")
     bool_expr = B & (A | C)
-    assert minterms_for_boolean(bool_expr, [A, B, C]) == [3, 6, 7]
-    assert minterms_for_boolean(bool_expr, [B, C, A]) == [5, 6, 7]
-    assert minterms_for_boolean(bool_expr, [C, A, B]) == [3, 5, 7]
-
-
-def test_get_extended_minterms():
-    # create a list of minterms
-    # convert the minterms to dont cares
-    # assert the dont cares
-    A, B, C = symbols("A, B, C")
-    bool_expr = B & (A | C)
-    minterms = minterms_for_boolean(bool_expr, [B, C, A])
-    assert get_extended_minterms(minterms, 0) == [5, 6, 7]
-    assert get_extended_minterms(minterms, 1) == [4, 5, 6, 7]
-    assert get_extended_minterms(minterms, 2) == [4, 5, 6, 7]
-    assert get_extended_minterms(minterms, 3) == [0, 1, 2, 3, 4, 5, 6, 7]
-
-
-def test_boolean_expression_from_minterms():
-    # create a logic expression from minterms and dont_cares
-    # assert the expression
-    A, B, C = symbols("A, B, C")
-    bool_expr = B & (A | C)
-
-    minterms = minterms_for_boolean(bool_expr, [A, B, C])
-    extended_minterms = get_extended_minterms(minterms, 0)
-    sop_form = SOPform([A, B, C], extended_minterms)
-    assert sop_form == (A & B) | (B & C)
-
-    extended_minterms = get_extended_minterms(minterms, 1)
-    sop_form = SOPform([A, B, C], extended_minterms)
-    assert sop_form == B
-
-    minterms = minterms_for_boolean(bool_expr, [B, C, A])
-    extended_minterms = get_extended_minterms(minterms, 1)
-    sop_form = SOPform([B, C, A], extended_minterms)
-    assert sop_form == B
-
-    minterms = minterms_for_boolean(bool_expr, [C, A, B])
-    extended_minterms = get_extended_minterms(minterms, 1)
-    sop_form = SOPform([C, A, B], extended_minterms)
-    assert sop_form == A | C
+    condition = Condition(bool_expr)
+    assert condition._get_minterms([A, B, C]) == [3, 6, 7]
+    assert condition._get_minterms([B, C, A]) == [5, 6, 7]
+    assert condition._get_minterms([C, A, B]) == [3, 5, 7]
 
 
 def test_get_boolean_expression_for_relevant_symobls():
@@ -79,24 +38,31 @@ def test_get_boolean_expression_for_relevant_symobls():
     # assert the expression
     A, B, C = symbols("A, B, C")
     bool_expr = B & (A | C)
+    condition = Condition(bool_expr)
 
     relevant_symbols = [B]
-    relevant_expr = get_boolean_expression_for_relevant_symbols(
-        bool_expr, relevant_symbols
+    relevant_expr = condition._get_boolean_expression_for_relevant_symbols(
+        relevant_symbols
     )
     assert relevant_expr == B
 
     relevant_symbols = [A, C]
-    relevant_expr = get_boolean_expression_for_relevant_symbols(
-        bool_expr, relevant_symbols
+    relevant_expr = condition._get_boolean_expression_for_relevant_symbols(
+        relevant_symbols
     )
     assert relevant_expr == A | C
 
     relevant_symbols = [C]
-    relevant_expr = get_boolean_expression_for_relevant_symbols(
-        bool_expr, relevant_symbols
+    relevant_expr = condition._get_boolean_expression_for_relevant_symbols(
+        relevant_symbols
     )
-    assert relevant_expr == True
+    assert relevant_expr == BooleanTrue()
+
+    relevant_symbols = []
+    relevant_expr = condition._get_boolean_expression_for_relevant_symbols(
+        relevant_symbols
+    )
+    assert relevant_expr == BooleanTrue()
 
 
 def test_evaluate_variant():
@@ -120,4 +86,3 @@ def test_evaluate_variant():
 
     assert not part_1.test_condition(variant)
     assert part_2.test_condition(variant)
-
