@@ -20,3 +20,10 @@ license-files = ["../LICENSE*"]
 
 [project.urls]
 Homepage = "https://github.com/eseidinger/python-algos"
+
+[tool.hatch.envs.hatch-test]
+default-args = ["tests"]
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]

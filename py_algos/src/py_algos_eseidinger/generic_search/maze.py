@@ -252,31 +252,31 @@ def main_step_by_step() -> None:
     """
     m: Maze = Maze(sparseness=0.2)
     print(m)
-    dfs: DFS = DFS(m.start, m.goal_test, m.successors)
-    while not dfs.step():
-        current_solution: Optional[Node[MazeLocation]] = dfs.currentNode
+    dfs_instance: DFS = DFS(m.start, m.goal_test, m.successors)
+    while not dfs_instance.step():
+        current_solution: Optional[Node[MazeLocation]] = dfs_instance.current_node
         current_path = node_to_path(current_solution)
-        current_frontier = [n.state for n in dfs.frontier.content_copy()]
-        m.mark_explored(dfs.explored)
+        current_frontier = [n.state for n in dfs_instance.frontier.content_copy()]
+        m.mark_explored(dfs_instance.explored)
         m.mark_frontier(current_frontier)
         m.mark(current_path)
         print(m)
         print(current_frontier)
-        m.clear(dfs.explored)
+        m.clear(dfs_instance.explored)
         m.clear(current_frontier)
         m.clear(current_path)
-    if dfs.solution is None:
+    if dfs_instance.solution is None:
         print("No solution found with depth-first search!")
     else:
-        solution: Optional[Node[MazeLocation]] = dfs.solution
+        solution: Optional[Node[MazeLocation]] = dfs_instance.solution
         path = node_to_path(solution)
-        current_frontier = [n.state for n in dfs.frontier.content_copy()]
-        m.mark_explored(dfs.explored)
+        current_frontier = [n.state for n in dfs_instance.frontier.content_copy()]
+        m.mark_explored(dfs_instance.explored)
         m.mark_frontier(current_frontier)
         m.mark(path)
         print(m)
         print(current_frontier)
-        m.clear(dfs.explored)
+        m.clear(dfs_instance.explored)
         m.clear(current_frontier)
         m.clear(path)
 

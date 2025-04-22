@@ -1,6 +1,7 @@
-# Generic Search Algorithms and Data Structures as described
-# by David Kopec in "Classic Computer Science Problems in Python"
-
+"""
+Generic Search Algorithms and Data Structures as described
+by David Kopec in "Classic Computer Science Problems in Python"
+"""
 from typing import TypeVar, Iterable, Protocol, Sequence, Generic, Optional, Callable, Deque
 from heapq import heappush, heappop
 
@@ -81,7 +82,7 @@ class Stack(Generic[T]):
         return repr(self._container)
 
 
-class Node(Generic[T]):
+class Node(Generic[T]): # pylint: disable=too-few-public-methods
     """A node in the search tree.
     Each node contains a state, a parent node, and cost and heuristic values.
     """
@@ -138,7 +139,7 @@ class DFS(Generic[T]):
         self._solution: Optional[Node[T]] = None
 
     @property
-    def currentNode(self) -> Optional[Node[T]]:
+    def current_node(self) -> Optional[Node[T]]:
         """
         Get the current node in the search.
         Returns:

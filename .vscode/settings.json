@@ -5,12 +5,16 @@
     "CHROME_BIN": "chromium"
   },
   "cSpell.words": [
+    "addopts",
     "astar",
     "devkit",
     "eseidinger",
+    "Kopec",
     "LICEN",
     "popleft",
     "pyodide",
+    "pytest",
+    "pythonpath",
     "Seidinger",
     "xdist",
     "ydist"
@@ -19,7 +23,7 @@
     "editor.defaultFormatter": "ms-python.black-formatter"
   },
   "python.testing.pytestArgs": [
-    "python_algos/test"
+    "py_algos/tests"
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true
