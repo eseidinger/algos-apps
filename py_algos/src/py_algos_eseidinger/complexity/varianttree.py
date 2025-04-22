@@ -7,7 +7,7 @@ in the condition.
 """
 
 from copy import deepcopy
-from typing import Optional, Self
+from typing import Optional, Protocol, Self
 from sympy import symbols, Symbol
 from sympy.logic import SOPform
 from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer
@@ -84,6 +84,19 @@ class Variant:
             for possible_variant in possible_variants
         )
 
+    def is_final(self, symbol_order: list[Symbol]) -> bool:
+        """Return True if the variant is final"""
+        attributes_with_value = [
+            attribute.symbol
+            for attribute in self.attributes
+            if attribute.value is not None
+        ]
+        return set(attributes_with_value) == set(symbol_order)
+
+    def is_empty(self) -> bool:
+        """Return True if the variant is empty"""
+        return all(attribute.value is None for attribute in self.attributes)
+
 
 class Condition:
     """
@@ -95,6 +108,10 @@ class Condition:
 
     def test_condition(self, variant: Variant) -> bool:
         """Test if the variant satisfies the condition"""
+        if variant.is_final(self.condition.free_symbols):
+            return self.condition.subs(variant.to_dict())
+        if variant.is_empty():
+            return False
         relevant_symbols = [
             attr.symbol for attr in variant.attributes if attr.value is not None
         ]
@@ -136,14 +153,27 @@ class Condition:
         return SOPform(relevant_symbols, minified_minterms)
 
 
-class Part(Condition):
+class Conditional(Protocol):
+    """
+    A protocol to represent an object that has a condition
+    """
+
+    def get_condition(self) -> Condition:
+        """Return the condition of the object"""
+
+
+class Part(Conditional):
     """
     A class to represent a part
     """
 
-    def __init__(self, name: str, condition: Boolean):
-        super().__init__(condition)
+    def __init__(self, name: str, condition: Condition):
+        self.condition = condition
         self.name = name
+
+    def get_condition(self) -> Condition:
+        """Return the condition of the part"""
+        return self.condition
 
     def __str__(self):
         return self.name
@@ -157,12 +187,20 @@ class VariantNode:
     A class to represent a node in a variant tree
     """
 
-    def __init__(self, variant: Variant, all_conditions: list[Condition]):
+    def __init__(
+        self,
+        current_symbol: Symbol,
+        symbol_order: list[Symbol],
+        variant: Variant,
+        all_conditionals: list[Conditional],
+    ):
+        self.current_symbol = current_symbol
         self.variant = variant
-        self.conditions = []
-        for condition in all_conditions:
-            if condition.test_condition(variant):
-                self.conditions.append(condition)
+        self.conditionals = []
+        if variant.is_final(symbol_order):
+            for conditional in all_conditionals:
+                if conditional.get_condition().test_condition(variant):
+                    self.conditionals.append(conditional)
         self.children = []
 
     def add_child(self, child):
@@ -170,8 +208,20 @@ class VariantNode:
         self.children.append(child)
 
     def __str__(self):
-        return f"{self.variant} -> {self.conditions}"
+        return f"{self.variant} -> {self.conditionals}"
 
+
+def get_next_symbol(
+    symbol_order: list[Symbol], current_symbol: Symbol
+) -> Optional[Symbol]:
+    """Return the next symbol in the symbol order"""
+    if current_symbol is None:
+        return symbol_order[0]
+    try:
+        index = symbol_order.index(current_symbol)
+        return symbol_order[index + 1]
+    except IndexError:
+        return None
 
 def add_nodes(
     variant_node: VariantNode,
@@ -180,18 +230,20 @@ def add_nodes(
     conditions: list[Condition],
 ):
     """Add nodes to a variant node"""
+    next_symbol = get_next_symbol(symbol_order, variant_node.current_symbol)
+    if next_symbol is None:
+        return
     for value in [True, False]:
-        new_variant = variant_node.variant.create_subvariant(symbol_order[0], value)
+        new_variant = variant_node.variant.create_subvariant(next_symbol, value)
         if new_variant.is_possible(possible_variants):
-            new_node = VariantNode(new_variant, conditions)
+            new_node = VariantNode(next_symbol, symbol_order, new_variant, conditions)
             variant_node.add_child(new_node)
-            if len(symbol_order) > 1:
-                add_nodes(
-                    new_node,
-                    possible_variants,
-                    [symbol_order[i] for i in range(1, len(symbol_order))],
-                    conditions,
-                )
+            add_nodes(
+                new_node,
+                possible_variants,
+                symbol_order,
+                conditions,
+            )
 
 
 def construct_variant_tree(
@@ -201,12 +253,15 @@ def construct_variant_tree(
 ) -> VariantNode:
     """Construct a variant tree from possible variants and conditions that need to be satisfied"""
     root = VariantNode(
-        Variant([Attribute(symbol) for symbol in symbol_order]), conditions
+        None,
+        symbol_order,
+        Variant([Attribute(symbol) for symbol in symbol_order]),
+        conditions,
     )
     add_nodes(
         root,
         possible_variants,
-        [symbol_order[i] for i in range(0, len(symbol_order))],
+        symbol_order,
         conditions,
     )
     return root
@@ -267,8 +322,8 @@ def main():
     Example usage of the variant tree
     """
     A, B, C = symbols("A, B, C")
-    part_1 = Part("Part 1", B & (A | C))
-    part_2 = Part("Part 2", C & (A | B))
+    part_1 = Part("Part 1", Condition(B & (A | C)))
+    part_2 = Part("Part 2", Condition(C & (A | B)))
 
     variant_1 = Variant([Attribute(A, True), Attribute(B, True), Attribute(C, False)])
     variant_2 = Variant([Attribute(A, True), Attribute(B, False), Attribute(C, True)])
@@ -278,6 +333,11 @@ def main():
         [variant_1, variant_2, variant_3], [A, B, C], [part_1, part_2]
     )
     print_tree(tree)
+
+    tree_2 = construct_variant_tree(
+        [variant_1, variant_2, variant_3], [A, B], [part_1, part_2]
+    )
+    print_tree(tree_2)
 
 
 if __name__ == "__main__":
