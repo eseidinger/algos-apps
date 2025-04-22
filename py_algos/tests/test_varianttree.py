@@ -1,9 +1,10 @@
-# a pytest module to test creeating a logic expression using sympy logic
-
+"""
+Test the functionality of the VariantTree module.
+This module contains tests for the VariantTree class and its methods."""
 from sympy import symbols
 from sympy.logic.boolalg import BooleanTrue, to_dnf
 
-from python_algos.complexity.varianttree import (
+from py_algos_eseidinger.complexity.varianttree import (
     Attribute,
     Variant,
     Condition,

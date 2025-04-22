@@ -1,3 +1,4 @@
+sympy
 build
 pytest
 hatch

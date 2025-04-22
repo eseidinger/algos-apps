@@ -131,8 +131,8 @@ class Condition:
             ]
         )
         minterms = self._get_minterms(ordered_symbols)
-        nof_irreleveant_symobls = len(ordered_symbols) - len(relevant_symbols)
-        minified_minterms = {minterm >> nof_irreleveant_symobls for minterm in minterms}
+        nof_irrelevant_symbols = len(ordered_symbols) - len(relevant_symbols)
+        minified_minterms = {minterm >> nof_irrelevant_symbols for minterm in minterms}
         return SOPform(relevant_symbols, minified_minterms)
 
 
@@ -263,6 +263,9 @@ def print_tree(node, marker_str="+- ", level_markers=None):
 
 
 def main():
+    """
+    Example usage of the variant tree
+    """
     A, B, C = symbols("A, B, C")
     part_1 = Part("Part 1", B & (A | C))
     part_2 = Part("Part 2", C & (A | B))
