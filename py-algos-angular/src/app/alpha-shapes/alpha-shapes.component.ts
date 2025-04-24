@@ -30,6 +30,8 @@ export class AlphaShapesComponent {
     canvas.addEventListener('touchstart', (event: TouchEvent) => this.handleDragStartTouch(event));
     canvas.addEventListener('touchmove', (event: TouchEvent) => this.handleDragMoveTouch(event));
     canvas.addEventListener('touchend', (event: TouchEvent) => this.handleDragEndTouch(event));
+    window.addEventListener('resize', () => this.refresh());
+    this.refresh();
   }
 
   getPosition(event: MouseEvent): { x: number; y: number } {
@@ -51,7 +53,6 @@ export class AlphaShapesComponent {
   handleDragStart(event: MouseEvent) {
     if (!this.dragState.selected) {
       const position = this.getPosition(event);
-      console.log('handleDragStart', position);
       if (this.moveAlphaDisc) {
         this.dragStartAlphaDisc(position);
       } else {
