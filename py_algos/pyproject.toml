@@ -9,7 +9,7 @@ authors = [
   { name="Emanuel Seidinger", email="dev@eseidinger.de" },
 ]
 description = "A collection of algorithms and data structures"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
   "sympy",
@@ -19,7 +19,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 license = "MIT"
-license-files = ["../LICENSE*"]
+license-files = ["LICENSE*"]
 
 [project.urls]
 Homepage = "https://github.com/eseidinger/python-algos"
