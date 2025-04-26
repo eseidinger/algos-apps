@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "py-algos-angular": {
+    "algos-angular": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/py-algos-angular",
+            "outputPath": "dist/algos-angular",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -70,10 +70,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "py-algos-angular:build:production"
+              "buildTarget": "algos-angular:build:production"
             },
             "development": {
-              "buildTarget": "py-algos-angular:build:development"
+              "buildTarget": "algos-angular:build:development"
             }
           },
           "defaultConfiguration": "development"

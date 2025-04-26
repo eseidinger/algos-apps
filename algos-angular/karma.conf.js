@@ -24,7 +24,7 @@ module.exports = function (config) {
       suppressAll: true // removes the duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/py-algos-angular'),
+      dir: require('path').join(__dirname, './coverage/algos-angular'),
       subdir: '.',
       reporters: [
         { type: 'html' },
