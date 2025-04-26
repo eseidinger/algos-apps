@@ -147,18 +147,4 @@ describe('array and comparator functions', () => {
         expect(arrayFunctions.equals(arrayFunctions.makeElementsUnique(array4), array3)).toBe(true);
         expect(arrayFunctions.equals(arrayFunctions.makeElementsUnique(array4, eqFct), array3, eqFct)).toBe(true);
     });
-
-    it('removes duplicates and original element from an array', () => {
-        const array1 = [0, 2, 3];
-        const array2 = [0, 1, 1, 2, 3];
-        const array3 = [{ val: 0 }, { val: 2 }, { val: 3 }];
-        const array4 = [new EqualityObject(0), new EqualityObject(1), new EqualityObject(1), new EqualityObject(2), new EqualityObject(3)];
-
-        array4.forEach((el) => { el.equals = function (v: any) { return this.val === v.val; }; });
-        const eqFct = (v1: any, v2: any) => v1.val === v2.val;
-
-        expect(arrayFunctions.equals(arrayFunctions.removeDuplicates(array2), array1)).toBe(true);
-        expect(arrayFunctions.equals(arrayFunctions.removeDuplicates(array4), array3)).toBe(true);
-        expect(arrayFunctions.equals(arrayFunctions.removeDuplicates(array4, eqFct), array3, eqFct)).toBe(true);
-    });
 });

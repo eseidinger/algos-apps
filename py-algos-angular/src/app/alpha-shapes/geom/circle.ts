@@ -226,7 +226,7 @@ import { PathElement } from './pathelement';
      public crop(rect: Rectangle): (Circle | Arc | LineSegment)[] | null {
          let path: (Circle | Arc | LineSegment)[] = [];
          let intersections = this.getIntersectionsWithRectangle(rect);
-         intersections = arrayFunctions.removeDuplicates(intersections);
+         intersections = arrayFunctions.makeElementsUnique(intersections);
          const intersectionsClockwise = ConvexHull.compute(intersections);
  
          if (intersectionsClockwise.length === 0) {
