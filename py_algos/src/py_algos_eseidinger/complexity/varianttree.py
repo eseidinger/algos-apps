@@ -189,12 +189,12 @@ class VariantNode:
 
     def __init__(
         self,
-        current_symbol: Symbol,
+        current_symbols: list[Symbol],
         symbol_order: list[Symbol],
         variant: Variant,
         all_conditionals: list[Conditional],
     ):
-        self.current_symbol = current_symbol
+        self.current_symbols = current_symbols
         self.variant = variant
         self.conditionals = []
         if variant.is_final(symbol_order):
@@ -202,13 +202,50 @@ class VariantNode:
                 if conditional.get_condition().test_condition(variant):
                     self.conditionals.append(conditional)
         self.children = []
+        self.parent = None
 
     def add_child(self, child):
         """Add a child to the node"""
         self.children.append(child)
+        child.parent = self
+
+    def find_nodes_having_all_symbols(self, search_symbols: list[Symbol]) -> list[Self]:
+        """Find all children having all search_symbols"""
+        if self.current_symbols == search_symbols:
+            return [self]
+        found_nodes = []
+        for child in self.children:
+            found_nodes.extend(child.find_nodes_having_all_symbols(search_symbols))
+        return found_nodes
+
+    def get_path_to_parent_node(self, parent_nodes: list[Self]) -> list[Self]:
+        """Get the path to the parent node"""
+        if self in parent_nodes:
+            return [self]
+        return [self] + self.parent.get_path_to_parent_node(parent_nodes)
+
+    def compact_path(self, path: list[Self]) -> Self:
+        """Compact the path to the parent node"""
+        new_symbols = []
+        for node in path:
+            new_symbols.extend(node.current_symbols)
+        new_parent = path[-1].parent
+        new_parent.children.remove(path[-1])
+        new_parent.children.append(path[0])
+        path[0].parent = new_parent
+        path[0].current_symbols = new_symbols
+
+    def collapse(self, root_symbols: list[Symbol], leaf_symbols: list[Symbol]):
+        """Collapse nodes"""
+        root_nodes = self.find_nodes_having_all_symbols(root_symbols)
+        leaf_nodes = self.find_nodes_having_all_symbols(leaf_symbols)
+        for leaf_node in leaf_nodes:
+            path_to_parent = leaf_node.get_path_to_parent_node(root_nodes)
+            if len(path_to_parent) > 0:
+                self.compact_path(path_to_parent)
 
     def __str__(self):
-        return f"{self.variant} -> {self.conditionals}"
+        return f"{self.current_symbols} -> {self.variant} -> {self.conditionals}"
 
 
 def get_next_symbol(
@@ -223,6 +260,7 @@ def get_next_symbol(
     except IndexError:
         return None
 
+
 def add_nodes(
     variant_node: VariantNode,
     possible_variants: list[Variant],
@@ -230,13 +268,16 @@ def add_nodes(
     conditions: list[Condition],
 ):
     """Add nodes to a variant node"""
-    next_symbol = get_next_symbol(symbol_order, variant_node.current_symbol)
+    if len(variant_node.current_symbols) == 0:
+        next_symbol = symbol_order[0]
+    else:
+        next_symbol = get_next_symbol(symbol_order, variant_node.current_symbols[-1])
     if next_symbol is None:
         return
     for value in [True, False]:
         new_variant = variant_node.variant.create_subvariant(next_symbol, value)
         if new_variant.is_possible(possible_variants):
-            new_node = VariantNode(next_symbol, symbol_order, new_variant, conditions)
+            new_node = VariantNode([next_symbol], symbol_order, new_variant, conditions)
             variant_node.add_child(new_node)
             add_nodes(
                 new_node,
@@ -253,7 +294,7 @@ def construct_variant_tree(
 ) -> VariantNode:
     """Construct a variant tree from possible variants and conditions that need to be satisfied"""
     root = VariantNode(
-        None,
+        [],
         symbol_order,
         Variant([Attribute(symbol) for symbol in symbol_order]),
         conditions,
@@ -332,8 +373,15 @@ def main():
     tree = construct_variant_tree(
         [variant_1, variant_2, variant_3], [A, B, C], [part_1, part_2]
     )
+    print("Before collapsing:")
     print_tree(tree)
 
+    tree.collapse([B], [C])
+    print("\nAfter collapsing:")
+    print_tree(tree)
+    print("\n")
+
+    print("Tree with only two symbols:")
     tree_2 = construct_variant_tree(
         [variant_1, variant_2, variant_3], [A, B], [part_1, part_2]
     )
