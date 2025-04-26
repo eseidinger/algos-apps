@@ -84,7 +84,9 @@ export class Computations {
         const rect = new Rectangle(minX, minY, maxX, maxY);
 
         const convexHull = ConvexHull.compute(points);
-        this.convexHull.push(new Polygon(convexHull, true));
+        if (convexHull.length > 0) {
+            this.convexHull.push(new Polygon(convexHull, true));
+        }
         let voronoiMin: EdgeList | null = null;
         let voronoiMax: EdgeList | null = null;
 

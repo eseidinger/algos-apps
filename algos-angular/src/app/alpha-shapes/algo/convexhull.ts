@@ -80,8 +80,6 @@
              // Combine upper and lower hulls
              convexHull = L_upper.concat(L_lower);
              convexHull = array.makeElementsUnique(convexHull);
-         } else {
-             convexHull = points.slice(0);
          }
  
          return convexHull;

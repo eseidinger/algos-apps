@@ -1,5 +1,3 @@
-'use strict';
-
 import constant from './constant';
 
 /**
@@ -223,22 +221,6 @@ namespace alphashape.util.array {
         return newArray;
     }
 
-    /**
-     * Creates an array where duplicates are removed.
-     *
-     * @param array - Array to remove duplicates from
-     * @param equalityFunction - Function for array elements (optional)
-     * @returns Array with unique elements
-     */
-    export function removeDuplicates<T>(array: T[], equalityFunction?: (a: T, b: T) => boolean): T[] {
-        const newArray: T[] = [];
-        array.forEach((el) => {
-            if (count(array, el, equalityFunction) === 1) {
-                newArray.push(el);
-            }
-        });
-        return newArray;
-    }
 }
 
 export default alphashape.util.array;
