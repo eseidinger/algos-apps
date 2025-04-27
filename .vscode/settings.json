@@ -33,5 +33,6 @@
     "py_algos/tests"
   ],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
