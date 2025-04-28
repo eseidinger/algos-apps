@@ -25,9 +25,6 @@ class Attribute:
     def __str__(self):
         return f"{self.symbol}: {self.value}"
 
-    def __repr__(self):
-        return f"{self.symbol}: {self.value}"
-
 
 class Variant:
     """
@@ -39,9 +36,6 @@ class Variant:
 
     def __str__(self):
         return " ".join(map(str, self.attributes))
-
-    def __repr__(self):
-        return " ".join(map(repr, self.attributes))
 
     def get_sorted_attributes(self) -> list[Attribute]:
         """Return the attributes sorted by symbol"""
@@ -55,8 +49,8 @@ class Variant:
             if attr.value is not None
         }
 
-    def is_subvariant_of(self, other_variant: Self) -> bool:
-        """Return True if the variant is a subvariant of another variant"""
+    def is_derived_from(self, other_variant: Self) -> bool:
+        """Return True if the variant is derived from another variant"""
         return all(
             self_attr.value == other_attr.value
             for self_attr, other_attr in zip(
@@ -65,12 +59,8 @@ class Variant:
             if other_attr.value is not None
         )
 
-    def is_supervariant_of(self, other_variant: Self) -> bool:
-        """Return True if the variant is an supervariant of another variant"""
-        return other_variant.is_subvariant_of(self)
-
-    def create_subvariant(self, symbol: Symbol, value: bool) -> Self:
-        """Return a subvariant variant with a new attribute value"""
+    def derive_variant(self, symbol: Symbol, value: bool) -> Self:
+        """Return a derived variant with a new attribute value"""
         new_variant = deepcopy(self)
         for attribute in new_variant.attributes:
             if attribute.symbol == symbol:
@@ -80,7 +70,7 @@ class Variant:
     def is_possible(self, possible_variants: list[Self]) -> bool:
         """Return True if the variant is possible"""
         return any(
-            self.is_supervariant_of(possible_variant)
+            possible_variant.is_derived_from(self)
             for possible_variant in possible_variants
         )
 
@@ -147,6 +137,8 @@ class Condition:
                 if symbol not in relevant_symbols
             ]
         )
+        if len(ordered_symbols) == len(relevant_symbols):
+            return self.condition
         minterms = self._get_minterms(ordered_symbols)
         nof_irrelevant_symbols = len(ordered_symbols) - len(relevant_symbols)
         minified_minterms = {minterm >> nof_irrelevant_symbols for minterm in minterms}
@@ -177,10 +169,6 @@ class Part(Conditional):
 
     def __str__(self):
         return self.name
-
-    def __repr__(self):
-        return self.name
-
 
 class VariantNode:
     """
@@ -275,7 +263,7 @@ def add_nodes(
     if next_symbol is None:
         return
     for value in [True, False]:
-        new_variant = variant_node.variant.create_subvariant(next_symbol, value)
+        new_variant = variant_node.variant.derive_variant(next_symbol, value)
         if new_variant.is_possible(possible_variants):
             new_node = VariantNode([next_symbol], symbol_order, new_variant, conditions)
             variant_node.add_child(new_node)

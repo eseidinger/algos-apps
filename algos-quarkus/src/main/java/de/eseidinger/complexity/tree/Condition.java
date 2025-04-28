@@ -20,7 +20,7 @@ public class Condition {
         this.factory = factory;
     }
 
-    public boolean testCondition(Variant variant) throws ParserException {
+    public boolean testCondition(Variant variant) {
         List<String> relevantSymbols = variant.getSortedAttributes().stream()
                 .filter(attribute -> attribute.getValue() != null)
                 .map(Attribute::getSymbol)
@@ -50,7 +50,7 @@ public class Condition {
         return minterms;
     }
 
-    private Formula dnfFromMinterms(List<Integer> minterms, List<String> orderedSymbols) throws ParserException {
+    private Formula dnfFromMinterms(List<Integer> minterms, List<String> orderedSymbols) {
         StringBuilder dnf = new StringBuilder();
         for (int i = 0; i < minterms.size(); i++) {
             int minterm = minterms.get(i);
@@ -71,10 +71,16 @@ public class Condition {
             dnf.append(")");
         }
         var parser = new PropositionalParser(this.factory);
-        return parser.parse(dnf.toString());
+        Formula parsedFormula;
+        try {
+            parsedFormula = parser.parse(dnf.toString());
+        } catch (ParserException e) {
+            throw new RuntimeException("Error parsing DNF: " + dnf, e);
+        }
+        return parsedFormula;
     }
 
-    private Formula getBooleanExpressionForRelevantSymbols(List<String> relevantSymbols) throws ParserException {
+    private Formula getBooleanExpressionForRelevantSymbols(List<String> relevantSymbols) {
         if (relevantSymbols.isEmpty()) {
             return new FormulaFactory().constant(true);
         }
