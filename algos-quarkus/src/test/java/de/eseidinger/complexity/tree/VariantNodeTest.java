@@ -31,9 +31,9 @@ public class VariantNodeTest {
     public void testAddChild() {
         VariantNode childNode = new VariantNode(Arrays.asList("C"), symbolOrder, variant, List.of());
         variantNode.addChild(childNode);
-        assertEquals(1, variantNode.children.size());
-        assertEquals(childNode, variantNode.children.get(0));
-        assertEquals(variantNode, childNode.parent);
+        assertEquals(1, variantNode.getChildren().size());
+        assertEquals(childNode, variantNode.getChildren().get(0));
+        assertEquals(variantNode, childNode.getParent());
     }
 
     @Test
@@ -61,8 +61,8 @@ public class VariantNodeTest {
         variantNode.addChild(childNode);
         List<VariantNode> path = List.of(variantNode, childNode);
         variantNode.compactPath(path);
-        assertEquals(1, variantNode.children.size());
-        assertEquals(variantNode, childNode.parent);
+        assertEquals(1, variantNode.getChildren().size());
+        assertEquals(variantNode, childNode.getParent());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class VariantNodeTest {
         VariantNode leafNode = new VariantNode(Arrays.asList("C"), symbolOrder, variant, List.of());
         variantNode.addChild(leafNode);
         variantNode.collapse(Arrays.asList("A"), Arrays.asList("C"));
-        assertEquals(0, variantNode.children.size());
+        assertEquals(0, variantNode.getChildren().size());
     }
 
     @Test

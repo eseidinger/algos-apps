@@ -49,7 +49,7 @@ public class Variant {
         return assignment;
     }
 
-    public boolean isSubvariantOf(Variant otherVariant) {
+    public boolean isDerivedFrom(Variant otherVariant) {
         List<Attribute> sortedSelf = this.getSortedAttributes();
         List<Attribute> sortedOther = otherVariant.getSortedAttributes();
 
@@ -65,11 +65,7 @@ public class Variant {
         return true;
     }
 
-    public boolean isSupervariantOf(Variant otherVariant) {
-        return otherVariant.isSubvariantOf(this);
-    }
-
-    public Variant createSubvariant(String symbol, Boolean value) {
+    public Variant deriveVariant(String symbol, Boolean value) {
         List<Attribute> newAttributes = new ArrayList<>();
         for (Attribute attr : attributes) {
             newAttributes.add(new Attribute(attr.getSymbol(), attr.getValue()));
@@ -85,7 +81,7 @@ public class Variant {
 
     public boolean isPossible(List<Variant> possibleVariants) {
         for (Variant possibleVariant : possibleVariants) {
-            if (this.isSupervariantOf(possibleVariant)) {
+            if (possibleVariant.isDerivedFrom(this)) {
                 return true;
             }
         }
