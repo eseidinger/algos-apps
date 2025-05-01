@@ -312,6 +312,19 @@ class VariantNode:
     +- [B] -> {A: False, B: True, C: None} -> []
         +- [C] -> {A: False, B: True, C: True} -> [Part 1, Part 2]
 
+    Nodes can also be collapsed to reduce the size of the tree.
+    For example, collapsing the nodes with the symbols B and C
+
+    tree.collapse([B], [C])
+
+    leads to the following tree:
+
+    [] -> {A: None, B: None, C: None} -> []
+    +- [A] -> {A: True, B: None, C: None} -> []
+    |  +- [B, ~C] -> {A: True, B: True, C: False} -> [Part 1]
+    |  +- [~B, C] -> {A: True, B: False, C: True} -> [Part 2]
+    +- [~A] -> {A: False, B: None, C: None} -> []
+    +- [B, C] -> {A: False, B: True, C: True} -> [Part 1, Part 2]
 
     Not every symbol in the conditions needs to be present in the tree.
     For example, disregarding the symbol C:
@@ -329,20 +342,6 @@ class VariantNode:
     |  +- [~B] -> {A: True, B: False} -> [Part 2]
     +- [~A] -> {A: False, B: None} -> []
     +- [B] -> {A: False, B: True} -> [Part 1, Part 2]
-
-    Nodes can also be collapsed to reduce the size of the tree.
-    For example, collapsing the nodes with the symbols B and C
-
-    tree.collapse([B], [C])
-
-    leads to the following tree:
-
-    [] -> {A: None, B: None, C: None} -> []
-    +- [A] -> {A: True, B: None, C: None} -> []
-    |  +- [B, ~C] -> {A: True, B: True, C: False} -> [Part 1]
-    |  +- [~B, C] -> {A: True, B: False, C: True} -> [Part 2]
-    +- [~A] -> {A: False, B: None, C: None} -> []
-    +- [B, C] -> {A: False, B: True, C: True} -> [Part 1, Part 2]
     """
 
     def __init__(
