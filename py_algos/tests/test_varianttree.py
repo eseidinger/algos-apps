@@ -3,7 +3,7 @@ Test the functionality of the VariantTree module.
 This module contains tests for the VariantTree class and its methods."""
 
 from sympy import symbols
-from sympy.logic.boolalg import BooleanTrue, to_dnf
+from sympy.logic.boolalg import BooleanTrue, to_dnf, truth_table, term_to_integer
 
 from py_algos_eseidinger.complexity.varianttree import (
     Attribute,
@@ -23,6 +23,18 @@ def test_dnf():
     dnf = to_dnf(bool_expr)
     assert dnf == (A & B) | (B & C)
 
+def test_minterms():
+    """Test the conversion of a boolean expression to minterms.
+    This test checks if the minterms of a boolean expression are correct.
+    """
+    A, B, C = symbols("A, B, C")
+    bool_expr = (A | B) & C
+    tt = truth_table(bool_expr, [A, B, C])
+    minterms = []
+    for row in tt:
+        if row[1]:
+            minterms.append(term_to_integer(row[0]))
+    assert minterms == [3, 5, 7]
 
 class TestAttribute:
     """Test the functionality of the Attribute class.
