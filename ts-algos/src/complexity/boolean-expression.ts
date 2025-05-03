@@ -16,10 +16,11 @@ export class BooleanExpressionParser {
     constructor(private expression: string) {}
 
     private tokenize(): void {
-        const regex = /\s*(\&|\||!|\(|\)|[A-Za-z_][A-Za-z0-9_]*)\s*/g;
+        const regex = /\s*(&|\||!|\(|\)|[A-Za-z_][A-Za-z0-9_]*)\s*/g;
         let match: RegExpExecArray | null;
 
         while ((match = regex.exec(this.expression)) !== null) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [_, token] = match;
             if (token === '&') {
                 this.tokens.push({ type: 'AND', value: token });
@@ -94,7 +95,7 @@ export class BooleanExpressionParser {
         throw new Error('Unexpected token');
     }
 
-    public parse(): any {
+    public parse(): AstNode {
         this.tokenize();
         const ast = this.parseExpression();
         if (this.current < this.tokens.length) {
@@ -112,13 +113,13 @@ export class BooleanExpression {
         this.ast = parser.parse();
     }
 
-    private evaluateNode(node: AstNode, context: Map<string, boolean>): boolean {
+    private evaluateNode(node: AstNode, context: Record<string, boolean>): boolean {
         switch (node.type) {
             case 'IDENTIFIER':
-                if (!context.has(node.value!)) {
+                if (!Object.prototype.hasOwnProperty.call(context, node.value!)) {
                     throw new Error(`Identifier "${node.value}" is not defined in the context`);
                 }
-                return context.get(node.value!)!;
+                return context[node.value!];
             case 'NOT':
                 return !this.evaluateNode(node.operand!, context);
             case 'AND':
@@ -130,7 +131,7 @@ export class BooleanExpression {
         }
     }
 
-    public evaluate(context: Map<string, boolean>): boolean {
+    public evaluate(context: Record<string, boolean>): boolean {
         return this.evaluateNode(this.ast, context);
     }
 
@@ -140,11 +141,11 @@ export class BooleanExpression {
 
         // Generate all possible truth table rows
         for (let i = 0; i < (1 << numIdentifiers); i++) {
-            const context: Map<string, boolean> = new Map();
+            const context: Record<string, boolean> = {};
 
             // Assign truth values to identifiers based on the binary representation of i
             identifiers.slice().reverse().forEach((identifier, index) => {
-                context.set(identifier, Boolean((i >> index) & 1));
+                context[identifier] = Boolean((i >> index) & 1);
             });
 
             // Evaluate the expression for this context
@@ -160,14 +161,14 @@ export class BooleanExpression {
         const identifiers = new Set<string>();
 
         // Recursive function to collect identifiers
-        const collectIdentifiers = (node: any): void => {
+        const collectIdentifiers = (node: AstNode): void => {
             if (node.type === 'IDENTIFIER') {
-                identifiers.add(node.value);
+                identifiers.add(node.value!);
             } else if (node.type === 'NOT') {
-                collectIdentifiers(node.operand);
+                collectIdentifiers(node.operand!);
             } else if (node.type === 'AND' || node.type === 'OR') {
-                collectIdentifiers(node.left);
-                collectIdentifiers(node.right);
+                collectIdentifiers(node.left!);
+                collectIdentifiers(node.right!);
             }
         };
 
@@ -205,11 +206,13 @@ export class BooleanTrue extends BooleanExpression {
         super('1');
     }
 
-    override evaluate(context: Map<string, boolean>): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override evaluate(_context: Record<string, boolean>): boolean {
         return true;
     }
 
-    override getMinterms(identifiers: string[]): number[] {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override getMinterms(_identifiers: string[]): number[] {
         return [0]; // All minterms are valid for a true expression
     }
 }

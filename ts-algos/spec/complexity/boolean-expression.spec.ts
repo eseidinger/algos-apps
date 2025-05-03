@@ -1,4 +1,4 @@
-import { BooleanExpressionParser, BooleanExpression } from '../../../src/complexity/tree/boolean-expression';
+import { BooleanExpressionParser, BooleanExpression } from '../../src/complexity/boolean-expression';
 
 describe('BooleanExpressionParser', () => {
     describe('tokenize', () => {
@@ -93,19 +93,19 @@ describe('BooleanExpression', () => {
     describe('evaluate', () => {
         it('should evaluate a simple AND expression', () => {
             const expr = new BooleanExpression('A & B');
-            const result = expr.evaluate(new Map([['A', true], ['B', false]]));
+            const result = expr.evaluate({"A": true, "B": false});
             expect(result).toBe(false);
         });
 
         it('should evaluate a nested expression', () => {
             const expr = new BooleanExpression('(A | B) & C');
-            const result = expr.evaluate(new Map([['A', true], ['B', false], ['C', true]]));
+            const result = expr.evaluate({"A": true, "B": false, "C": true});
             expect(result).toBe(true);
         });
 
         it('should throw an error for undefined identifiers', () => {
             const expr = new BooleanExpression('A & B');
-            expect(() => expr.evaluate(new Map([['A', true]]))).toThrowError(
+            expect(() => expr.evaluate({"A": true})).toThrowError(
                 'Identifier "B" is not defined in the context'
             );
         });
@@ -136,8 +136,8 @@ describe('BooleanExpression', () => {
     describe('sopFromMinterms', () => {
         it('should generate the correct SOP expression', () => {
             const expr = BooleanExpression.sopFromMinterms([3], ['A', 'B']);
-            expect(expr.evaluate(new Map([['A', true], ['B', true]]))).toBe(true);
-            expect(expr.evaluate(new Map([['A', true], ['B', false]]))).toBe(false);
+            expect(expr.evaluate({"A": true, "B": true})).toBe(true);
+            expect(expr.evaluate({"A": true, "B": false})).toBe(false);
         });
     });
 });
