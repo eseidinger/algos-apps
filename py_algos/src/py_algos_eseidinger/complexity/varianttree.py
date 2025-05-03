@@ -7,13 +7,13 @@ in the condition.
 """
 
 from copy import deepcopy
-from typing import Generic, Optional, Protocol, Self, TypeVar
-from sympy import symbols, Symbol # type: ignore
-from sympy.logic import SOPform # type: ignore
-from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer # type: ignore
+from typing import Generic, Optional, Protocol, Self, TypeVar, Any
+from sympy import symbols, Symbol  # type: ignore
+from sympy.logic import SOPform  # type: ignore
+from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer  # type: ignore
 
 
-class Attribute: # pylint: disable=too-few-public-methods
+class Attribute:  # pylint: disable=too-few-public-methods
     """
     A class to represent an attribute of a variant.
     An attribute is a symbol with an optional value.
@@ -146,20 +146,21 @@ class Variant:
         return all(attribute.value is None for attribute in self.attributes)
 
 
-class Condition: # pylint: disable=too-few-public-methods
+class Condition:  # pylint: disable=too-few-public-methods
     """
     A class to represent a condition.
     A condition is a boolean expression.
     """
 
     def __init__(self, condition: Boolean):
+        self.lenient_conditions: dict[tuple[Symbol], Boolean] = {}
         self.condition = condition
 
     def check(self, variant: Variant) -> bool:
         """Check if the variant satisfies the condition
         This method substitutes the values of the variant into the condition
         and return the result.
-        If the variant is empty, the result is False.
+        If the variant is empty, the result is True.
         Otherwise, a boolean expression is created with the relevant symbols
         and the values of the variant are substituted into the expression.
 
@@ -168,13 +169,15 @@ class Condition: # pylint: disable=too-few-public-methods
         A = True, B = None, C = False
         because ignoring the value of B, the relevant expression is A | C
         """
-        if variant.is_empty():
-            return False
         relevant_symbols = [
             attr.symbol for attr in variant.attributes if attr.value is not None
         ]
+        relevant_symbols = sorted(
+            relevant_symbols, key=lambda x: str(x)
+        )  # pylint: disable=unnecessary-lambda
+        relevant_symbol_tuple = tuple(relevant_symbols)
         relevant_condition = self._get_boolean_expression_for_relevant_symbols(
-            relevant_symbols
+            relevant_symbol_tuple
         )
         return relevant_condition.subs(variant.to_dict())
 
@@ -207,7 +210,7 @@ class Condition: # pylint: disable=too-few-public-methods
         return sorted_minterms
 
     def _get_boolean_expression_for_relevant_symbols(
-        self, relevant_symbols=list[Symbol]
+        self, relevant_symbols=tuple[Symbol]
     ) -> Boolean:
         """Return a boolean expression where only the relevant symbols
         have an influence on the result.
@@ -241,11 +244,14 @@ class Condition: # pylint: disable=too-few-public-methods
         of the boolean expression, which would be in this case:
         (~A & C) | (A & ~C) | (A & C)
         """
+        if relevant_symbols in self.lenient_conditions:
+            return self.lenient_conditions[relevant_symbols]
         # The condition is always true if there are no relevant symbols
         if len(relevant_symbols) == 0:
+            self.lenient_conditions[relevant_symbols] = BooleanTrue()
             return BooleanTrue()
         # relevant symbols come first in the ordered symbols
-        ordered_symbols = relevant_symbols.copy()
+        ordered_symbols = list(relevant_symbols)
         ordered_symbols.extend(
             [
                 symbol
@@ -261,10 +267,12 @@ class Condition: # pylint: disable=too-few-public-methods
         # The irrelevant symbols are the LSBs of the minterms and can be ignored by shifting
         # the minterms to the right
         minified_minterms = {minterm >> nof_irrelevant_symbols for minterm in minterms}
-        return SOPform(relevant_symbols, minified_minterms)
+        result = SOPform(relevant_symbols, minified_minterms)
+        self.lenient_conditions[relevant_symbols] = result
+        return result
 
 
-class Conditional(Protocol): # pylint: disable=too-few-public-methods
+class Conditional(Protocol):  # pylint: disable=too-few-public-methods
     """
     A protocol to represent an object that has a condition
     """
@@ -291,6 +299,7 @@ class Part(Conditional):
 
 
 T = TypeVar("T", bound=Conditional)
+
 
 class VariantNode(Generic[T]):
     """
@@ -381,7 +390,7 @@ class VariantNode(Generic[T]):
     +- [B] -> {A: False, B: True} -> [Part 1, Part 2]
     """
 
-    def __init__( # pylint: disable=too-many-arguments, too-many-positional-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         current_symbols: list[Symbol],
         variant: Variant,
@@ -397,6 +406,7 @@ class VariantNode(Generic[T]):
         :param symbol_order: The order of the symbols determines the order of levels in the tree
         :param all_conditionals: The conditional which are assigned to leaf nodes
         """
+        self.node_props: dict[str, Any] = {}
         self.children: list[Self] = []
         self.parent = None
         self.current_symbols = current_symbols
@@ -478,7 +488,9 @@ class VariantNode(Generic[T]):
             return [self]
         found_nodes = []
         for child in self.children:
-            found_nodes.extend(child._find_nodes_having_all_symbols(search_symbols)) # pylint: disable=protected-access
+            found_nodes.extend(
+                child._find_nodes_having_all_symbols(search_symbols)
+            )  # pylint: disable=protected-access
         return found_nodes
 
     def _get_path_to_parent_node(self, parent_nodes: list[Self]) -> list[Self]:
@@ -487,7 +499,9 @@ class VariantNode(Generic[T]):
         """
         if self in parent_nodes or self.parent is None:
             return [self]
-        return [self] + self.parent._get_path_to_parent_node(parent_nodes) # pylint: disable=protected-access
+        return [self] + self.parent._get_path_to_parent_node(
+            parent_nodes
+        )  # pylint: disable=protected-access
 
     def _compact_path(self, path_to_head: list[Self]) -> None:
         """Compact the path to the head node
@@ -557,7 +571,9 @@ class VariantNode(Generic[T]):
         head_nodes = self._find_nodes_having_all_symbols(head_symbols)
         tail_nodes = self._find_nodes_having_all_symbols(tail_symbols)
         for leaf_node in tail_nodes:
-            path_to_head = leaf_node._get_path_to_parent_node(head_nodes) # pylint: disable=protected-access
+            path_to_head = leaf_node._get_path_to_parent_node(
+                head_nodes
+            )  # pylint: disable=protected-access
             if len(path_to_head) > 0:
                 self._compact_path(path_to_head)
 
@@ -585,7 +601,7 @@ class VariantNode(Generic[T]):
         return f"[{symbol_strings}] -> {self.variant} -> [{conditional_str}]"
 
 
-def print_tree(node, marker_str="+- ", level_markers=None):
+def print_tree(node, marker_str="+- ", level_markers=None, str_func=str):
     """
     Recursive function that prints the hierarchical structure of a tree
     including markers that indicate parent-child relationships between nodes.
@@ -628,18 +644,38 @@ def print_tree(node, marker_str="+- ", level_markers=None):
         map(lambda draw: connection_str if draw else empty_str, level_markers[:-1])
     )
     markers += marker_str if level > 0 else ""
-    print(f"{markers}{node}")
+    print(f"{markers}{str_func(node)}")
 
     for i, child in enumerate(node.children):
         is_last = i == len(node.children) - 1
-        print_tree(child, marker_str, [*level_markers, not is_last])
+        print_tree(child, marker_str, [*level_markers, not is_last], str_func=str_func)
+
+
+def collect_child_conditionals(node: VariantNode) -> set[Conditional]:
+    """
+    Collect all conditionals from the tree
+    """
+    conditionals = set()
+    for child in node.children:
+        conditionals.update(collect_child_conditionals(child))
+    conditionals.update(node.conditionals)
+    node.conditionals = list(conditionals)
+    node.node_props["conditional_count"] = len(conditionals)
+    return conditionals
+
+
+def print_conditionals(node: VariantNode):
+    """
+    Print the conditionals of the tree
+    """
+    return f"{str(node)} -> {node.node_props['conditional_count']} conditionals"
 
 
 def main():
     """
     Example usage of the variant tree
     """
-    A, B, C = symbols("A, B, C") # pylint: disable=invalid-name
+    A, B, C = symbols("A, B, C")  # pylint: disable=invalid-name
     symbol_order = [[A], [B], [C]]
     root_variant = VariantNode.create_root_variant(symbol_order)
 
@@ -658,9 +694,13 @@ def main():
     print("Before collapsing:")
     print_tree(tree)
 
+    collect_child_conditionals(tree)
+    print("\nWith collected conditionals:")
+    print_tree(tree, str_func=print_conditionals)
+
     tree.collapse([B], [C])
     print("\nAfter collapsing:")
-    print_tree(tree)
+    print_tree(tree, str_func=print_conditionals)
     print("\n")
 
     print("Collapsed tree")

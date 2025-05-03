@@ -215,21 +215,15 @@ class TestCondition:
         A, B, C = symbols("A, B, C")
         bool_expr = B & (A | C)
         condition = Condition(bool_expr)
-        assert condition._get_minterms([A, B, C]) == [
-            3,
-            6,
-            7,
-        ]  # pylint: disable=protected-access
-        assert condition._get_minterms([B, C, A]) == [
-            5,
-            6,
-            7,
-        ]  # pylint: disable=protected-access
-        assert condition._get_minterms([C, A, B]) == [
-            3,
-            5,
-            7,
-        ]  # pylint: disable=protected-access
+        assert condition._get_minterms(  # pylint: disable=protected-access
+            [A, B, C]
+        ) == [3, 6, 7]
+        assert condition._get_minterms(  # pylint: disable=protected-access
+            [B, C, A]
+        ) == [5, 6, 7]
+        assert condition._get_minterms(  # pylint: disable=protected-access
+            [C, A, B]
+        ) == [3, 5, 7]
 
     def test_get_boolean_expression_for_relevant_symobls(self):
         """Test the conversion of a boolean expression to a boolean expression
@@ -241,25 +235,25 @@ class TestCondition:
         bool_expr = B & (A | C)
         condition = Condition(bool_expr)
 
-        relevant_symbols = [B]
+        relevant_symbols = tuple([B])
         relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
             relevant_symbols
         )
         assert relevant_expr == B
 
-        relevant_symbols = [A, C]
+        relevant_symbols = (A, C)
         relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
             relevant_symbols
         )
         assert relevant_expr == A | C
 
-        relevant_symbols = [C]
+        relevant_symbols = tuple([C])
         relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
             relevant_symbols
         )
         assert relevant_expr == BooleanTrue()
 
-        relevant_symbols = []
+        relevant_symbols = tuple()
         relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
             relevant_symbols
         )
