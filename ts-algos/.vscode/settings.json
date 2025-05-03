@@ -1,6 +1,13 @@
 {
   "cSpell.words": [
+    "LPAREN",
+    "Minterms",
+    "RPAREN",
     "xdist",
     "ydist"
+  ],
+  "jasmineExplorer.nodeArgv": [
+    "-r",
+    "ts-node/register"
   ]
 }

@@ -143,7 +143,7 @@ export class BooleanExpression {
             const context: Map<string, boolean> = new Map();
 
             // Assign truth values to identifiers based on the binary representation of i
-            identifiers.forEach((identifier, index) => {
+            identifiers.slice().reverse().forEach((identifier, index) => {
                 context.set(identifier, Boolean((i >> index) & 1));
             });
 

@@ -50,7 +50,7 @@ describe('BooleanExpressionParser', () => {
 
         it('should throw an error for invalid characters', () => {
             const parser = new BooleanExpressionParser('A @ B');
-            expect(() => parser['tokenize']()).toThrowError();
+            expect(() => parser.parse()).toThrowError();
         });
     });
 
@@ -121,7 +121,7 @@ describe('BooleanExpression', () => {
         it('should return correct minterms for a complex expression', () => {
             const expr = new BooleanExpression('(A | B) & C');
             const minterms = expr.getMinterms(['A', 'B', 'C']);
-            expect(minterms).toEqual([3, 4, 5, 6, 7]); // Binary 011, 101, 110, 111
+            expect(minterms).toEqual([3, 5, 7]); // Binary 011, 101, 111
         });
     });
 
