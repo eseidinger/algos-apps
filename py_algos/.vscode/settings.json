@@ -1,0 +1,20 @@
+{
+  "python.envFile": "${workspaceFolder}/.env",
+  "terminal.integrated.env.linux": {
+    "PYTHONPATH": "./src"
+  },
+  "cSpell.words": [
+    "eseidinger",
+    "Kopec",
+    "sympy",
+    "varianttree"
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}
