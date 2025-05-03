@@ -173,8 +173,8 @@ class Condition:  # pylint: disable=too-few-public-methods
             attr.symbol for attr in variant.attributes if attr.value is not None
         ]
         relevant_symbols = sorted(
-            relevant_symbols, key=lambda x: str(x)
-        )  # pylint: disable=unnecessary-lambda
+            relevant_symbols, key=lambda x: str(x)  # pylint: disable=unnecessary-lambda
+        )
         relevant_symbol_tuple = tuple(relevant_symbols)
         relevant_condition = self._get_boolean_expression_for_relevant_symbols(
             relevant_symbol_tuple
