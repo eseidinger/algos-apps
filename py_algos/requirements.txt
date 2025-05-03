@@ -1,4 +1,6 @@
 sympy
+mypy
+pylint
 build
 pytest
 hatch

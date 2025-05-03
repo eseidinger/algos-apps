@@ -7,13 +7,13 @@ in the condition.
 """
 
 from copy import deepcopy
-from typing import Optional, Protocol, Self
-from sympy import symbols, Symbol
-from sympy.logic import SOPform
-from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer
+from typing import Generic, Optional, Protocol, Self, TypeVar
+from sympy import symbols, Symbol # type: ignore
+from sympy.logic import SOPform # type: ignore
+from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer # type: ignore
 
 
-class Attribute:
+class Attribute: # pylint: disable=too-few-public-methods
     """
     A class to represent an attribute of a variant.
     An attribute is a symbol with an optional value.
@@ -96,6 +96,32 @@ class Variant:
                 attribute.value = value
         return new_variant
 
+    def derive_variants(
+        self, next_symbols: list[Symbol], values: list[list[bool]]
+    ) -> list[Self]:
+        """Return a list of derived variants with new attribute values
+        This means that the new attribute values are added to the variant
+
+        For example:
+        A, B, C = symbols("A, B, C")
+
+        original_variant = Variant([Attribute(A, True), Attribute(B, None), Attribute(C, None)])
+        derived_variants = original_variant.derive_variants([B, C], [[True, False], [False, True]])
+        derived_variants == [
+            Variant([Attribute(A, True), Attribute(B, True), Attribute(C, False)]),
+            Variant([Attribute(A, True), Attribute(B, False), Attribute(C, True)])
+        ]
+        """
+        new_variants = []
+        for value in values:
+            new_variant = deepcopy(self)
+            for attribute in new_variant.attributes:
+                if attribute.symbol in next_symbols:
+                    index = next_symbols.index(attribute.symbol)
+                    attribute.value = value[index]
+            new_variants.append(new_variant)
+        return new_variants
+
     def is_possible(self, possible_variants: list[Self]) -> bool:
         """Return True if the variant is possible
         This means that any of the possible variants is derived from or equal to this variant
@@ -120,7 +146,7 @@ class Variant:
         return all(attribute.value is None for attribute in self.attributes)
 
 
-class Condition:
+class Condition: # pylint: disable=too-few-public-methods
     """
     A class to represent a condition.
     A condition is a boolean expression.
@@ -238,7 +264,7 @@ class Condition:
         return SOPform(relevant_symbols, minified_minterms)
 
 
-class Conditional(Protocol):
+class Conditional(Protocol): # pylint: disable=too-few-public-methods
     """
     A protocol to represent an object that has a condition
     """
@@ -264,7 +290,9 @@ class Part(Conditional):
         return self.name
 
 
-class VariantNode:
+T = TypeVar("T", bound=Conditional)
+
+class VariantNode(Generic[T]):
     """
     A class to represent a node in a variant tree.
 
@@ -274,17 +302,17 @@ class VariantNode:
     The leafs of the tree represent the possible variants.
     The conditionals are assigned to the leaf nodes.
 
-    The tree is created by recursively creating child nodes for each symbol
-    in the symbol order. The child nodes are created by deriving the variant
-    from the parent variant using the current symbol and the value of the symbol.
-    The child nodes are created until all symbols are set in the variant.
+    The tree is created by recursively creating child nodes for each set of symbols
+    in the symbol order. The child nodes are created by deriving possible variants
+    from the parent variant, adding a new set of symbols with all possible values.
+    Child nodes are created until all symbols are set in the current  node's variant.
     The conditionals are assigned to the leaf nodes by checking if the condition
     of the conditional is satisfied by the variant.
 
     For example:
 
     A, B, C = symbols("A, B, C")
-    symbol_order = [A, B, C]
+    symbol_order = [[A], [B], [C]]
     root_variant = VariantNode.create_root_variant(symbol_order)
 
     variant_1 = Variant([Attribute(A, True), Attribute(B, True), Attribute(C, False)])
@@ -326,12 +354,21 @@ class VariantNode:
     +- [~A] -> {A: False, B: None, C: None} -> []
     +- [B, C] -> {A: False, B: True, C: True} -> [Part 1, Part 2]
 
+    A tree can also be crated with collapsed nodes from the beginning.
+    The example below leads to the same tree as above:
+
+    symbol_order = [[A], [B, C]]
+    root_variant = VariantNode.create_root_variant(symbol_order)
+    tree_2 = VariantNode(
+        [], root_variant, symbol_order, possible_variants, all_conditionals
+    )
+
     Not every symbol in the conditions needs to be present in the tree.
     For example, disregarding the symbol C:
 
-    root_variant = VariantNode.create_root_variant([A, B])
+    root_variant = VariantNode.create_root_variant([[A], [B]])
     tree_2 = VariantNode(
-        [], root_variant, [A, B], [variant_1, variant_2, variant_3], [part_1, part_2]
+        [], root_variant, [[A], [B]], [variant_1, variant_2, variant_3], [part_1, part_2]
     )
 
     leads to the following tree:
@@ -344,13 +381,13 @@ class VariantNode:
     +- [B] -> {A: False, B: True} -> [Part 1, Part 2]
     """
 
-    def __init__(
+    def __init__( # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         current_symbols: list[Symbol],
         variant: Variant,
-        symbol_order: list[Symbol],
+        symbol_order: list[list[Symbol]],
         possible_variants: list[Variant],
-        all_conditionals: list[Conditional],
+        all_conditionals: list[T],
     ):
         """
         Initialize a variant tree
@@ -360,12 +397,13 @@ class VariantNode:
         :param symbol_order: The order of the symbols determines the order of levels in the tree
         :param all_conditionals: The conditional which are assigned to leaf nodes
         """
-        self.children = []
+        self.children: list[Self] = []
         self.parent = None
         self.current_symbols = current_symbols
         self.variant = variant
         self.conditionals = []
-        if variant.is_final(symbol_order):
+        flat_symbols = [symbol for sublist in symbol_order for symbol in sublist]
+        if variant.is_final(flat_symbols):
             for conditional in all_conditionals:
                 if conditional.get_condition().check(variant):
                     self.conditionals.append(conditional)
@@ -377,68 +415,81 @@ class VariantNode:
             )
 
     @staticmethod
-    def create_root_variant(symbol_order: list[Symbol]) -> Variant:
+    def create_root_variant(symbol_order: list[list[Symbol]]) -> Variant:
         """Create a root variant with all symbols set to None"""
-        return Variant([Attribute(symbol, None) for symbol in symbol_order])
+        symbols_flat = [symbol for sublist in symbol_order for symbol in sublist]
+        return Variant([Attribute(symbol, None) for symbol in symbols_flat])
+
+    @staticmethod
+    def bool_from_integer(value: int, nof_bits: int) -> list[bool]:
+        """Convert an integer to a list of booleans
+        The list is the binary representation of the integer
+        The length of the list is nof_bits
+        """
+        return [bool(int(bit)) for bit in bin(value)[2:].zfill(nof_bits)]
 
     def _create_child_nodes(
         self,
-        symbol_order: list[Symbol],
-        all_conditionals: list[Conditional],
+        symbol_order: list[list[Symbol]],
+        all_conditionals: list[T],
         possible_variants: list[Variant],
     ):
         """Add nodes to a variant node"""
-        next_symbol = self._get_next_symbol(symbol_order)
-        if next_symbol is None:
+        next_symbols = self._get_next_symbols(symbol_order)
+        if len(next_symbols) == 0:
             return
-        for value in [True, False]:
-            new_variant = self.variant.derive_variant(next_symbol, value)
-            if new_variant.is_possible(possible_variants):
-                new_node = VariantNode(
-                    [next_symbol],
-                    new_variant,
+        nof_variants = 2 ** len(next_symbols)
+        bool_values = [
+            VariantNode.bool_from_integer(i, len(next_symbols))
+            for i in range(nof_variants)
+        ]
+        variants = self.variant.derive_variants(next_symbols, bool_values)
+        for variant in variants:
+            if variant.is_possible(possible_variants):
+                child = VariantNode(
+                    next_symbols,
+                    variant,
                     symbol_order,
                     possible_variants,
                     all_conditionals,
                 )
-                self._add_child(new_node)
+                self._add_child(child)
 
-    def _get_next_symbol(self, symbol_order: list[Symbol]) -> Optional[Symbol]:
+    def _get_next_symbols(self, symbol_order: list[list[Symbol]]) -> list[Symbol]:
         """Return the next symbol in the symbol order"""
-        current_symbol = (
-            self.current_symbols[-1] if len(self.current_symbols) > 0 else None
-        )
-        if current_symbol is None:
+        if len(self.current_symbols) == 0:
             return symbol_order[0]
         try:
-            index = symbol_order.index(current_symbol)
+            index = symbol_order.index(self.current_symbols)
             return symbol_order[index + 1]
         except IndexError:
-            return None
+            return []
 
     def _add_child(self, child):
         """Add a child to the node"""
         self.children.append(child)
         child.parent = self
 
-    def _find_nodes_having_all_symbols(self, search_symbols: list[Symbol]) -> list[Self]:
+    def _find_nodes_having_all_symbols(
+        self, search_symbols: list[Symbol]
+    ) -> list[Self]:
         """Find all children having all search_symbols"""
         if self.current_symbols == search_symbols:
             return [self]
         found_nodes = []
         for child in self.children:
-            found_nodes.extend(child._find_nodes_having_all_symbols(search_symbols))
+            found_nodes.extend(child._find_nodes_having_all_symbols(search_symbols)) # pylint: disable=protected-access
         return found_nodes
 
     def _get_path_to_parent_node(self, parent_nodes: list[Self]) -> list[Self]:
         """Get the path to the parent node
         This method returns the path to one of the possible parent nodes
         """
-        if self in parent_nodes:
+        if self in parent_nodes or self.parent is None:
             return [self]
-        return [self] + self.parent._get_path_to_parent_node(parent_nodes)
+        return [self] + self.parent._get_path_to_parent_node(parent_nodes) # pylint: disable=protected-access
 
-    def _compact_path(self, path_to_head: list[Self]) -> Self:
+    def _compact_path(self, path_to_head: list[Self]) -> None:
         """Compact the path to the head node
         This means collecting all symbols on the path and setting them to the tail node.
         All other nodes on the path are removed.
@@ -449,6 +500,8 @@ class VariantNode:
         new_symbols.reverse()
         head = path_to_head[-1]
         new_parent = head.parent
+        if new_parent is None:
+            return
         try:
             new_parent.children.remove(head)
         except ValueError:
@@ -465,7 +518,7 @@ class VariantNode:
         all root symbols to nodes having all leaf symbols
         @param head_symbols: The symbols of the head nodes (closer to the root)
         @param tail_symbols: The symbols of the tail nodes (closer to the leafs)
-        
+
         For example:
         Consider the following tree:
         []
@@ -504,7 +557,7 @@ class VariantNode:
         head_nodes = self._find_nodes_having_all_symbols(head_symbols)
         tail_nodes = self._find_nodes_having_all_symbols(tail_symbols)
         for leaf_node in tail_nodes:
-            path_to_head = leaf_node._get_path_to_parent_node(head_nodes)
+            path_to_head = leaf_node._get_path_to_parent_node(head_nodes) # pylint: disable=protected-access
             if len(path_to_head) > 0:
                 self._compact_path(path_to_head)
 
@@ -523,8 +576,7 @@ class VariantNode:
         if symbol in variant_map:
             if variant_map[symbol] is True:
                 return f"{symbol}"
-            else:
-                return f"~{symbol}"
+            return f"~{symbol}"
         return str(symbol)
 
     def __str__(self):
@@ -587,8 +639,8 @@ def main():
     """
     Example usage of the variant tree
     """
-    A, B, C = symbols("A, B, C")
-    symbol_order = [A, B, C]
+    A, B, C = symbols("A, B, C") # pylint: disable=invalid-name
+    symbol_order = [[A], [B], [C]]
     root_variant = VariantNode.create_root_variant(symbol_order)
 
     variant_1 = Variant([Attribute(A, True), Attribute(B, True), Attribute(C, False)])
@@ -611,13 +663,22 @@ def main():
     print_tree(tree)
     print("\n")
 
-    print("Tree with only two symbols:")
-    symbol_order = [A, B]
+    print("Collapsed tree")
+    symbol_order = [[A], [B, C]]
     root_variant = VariantNode.create_root_variant(symbol_order)
     tree_2 = VariantNode(
         [], root_variant, symbol_order, possible_variants, all_conditionals
     )
     print_tree(tree_2)
+    print("\n")
+
+    print("Tree with only two symbols:")
+    symbol_order = [[A], [B]]
+    root_variant = VariantNode.create_root_variant(symbol_order)
+    tree_3 = VariantNode(
+        [], root_variant, symbol_order, possible_variants, all_conditionals
+    )
+    print_tree(tree_3)
 
 
 if __name__ == "__main__":
