@@ -202,6 +202,15 @@ class TestVariant:
         assert emtpy_variant.is_empty()
         assert not non_empty_variant.is_empty()
 
+    def test_as_minterms(self):
+        """Test the as_minterm method of the Variant class.
+        This method converts the variant to a minterm.
+        """
+        A, B, C = symbols("A, B, C")
+        attributes = [Attribute(A, True), Attribute(B, False), Attribute(C, None)]
+        variant = Variant(attributes)
+        assert variant.as_minterms([A, B, C]) == [4, 5]
+
 
 class TestCondition:
     """Test the functionality of the Condition class.

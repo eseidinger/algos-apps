@@ -7,10 +7,11 @@ in the condition.
 """
 
 from copy import deepcopy
+from itertools import product
 from typing import Generic, Optional, Protocol, Self, TypeVar, Any
 from sympy import symbols, Symbol  # type: ignore
 from sympy.logic import SOPform  # type: ignore
-from sympy.logic.boolalg import Boolean, BooleanTrue, truth_table, term_to_integer  # type: ignore
+from sympy.logic.boolalg import Boolean, BooleanTrue, Or, to_dnf  # type: ignore
 
 
 class Attribute:  # pylint: disable=too-few-public-methods
@@ -144,7 +145,31 @@ class Variant:
     def is_empty(self) -> bool:
         """Return True if the variant is empty"""
         return all(attribute.value is None for attribute in self.attributes)
-
+    
+    def as_minterms(self, symbol_order: list[Symbol]) -> list[int]:
+        """Return the variant as a minterms
+        The minterm is a binary representation of the variant
+        The order of the symbols is determined by the symbol order
+        """
+        self_dict = self.to_dict()
+        minterm = []
+        for symbol in symbol_order:
+            if symbol in self_dict:
+                if self_dict[symbol] is True:
+                    minterm.append(1)
+                else:
+                    minterm.append(0)
+            else:
+                minterm.append(None)
+        expanded_minterms = [
+            (value,) if value is not None else (0, 1) for value in minterm
+        ]
+        expanded_minterms = list(product(*expanded_minterms))
+        minterm_integers = []
+        for minterm in expanded_minterms:
+            binary_string = ''.join(str(bit) for bit in minterm)
+            minterm_integers.append(int(binary_string, 2))
+        return sorted(set(minterm_integers))
 
 class Condition:  # pylint: disable=too-few-public-methods
     """
@@ -201,13 +226,31 @@ class Condition:  # pylint: disable=too-few-public-methods
         The minterms are:
         3, 6, 7
         """
+        dnf_expression = to_dnf(self.condition)
+        if isinstance(dnf_expression, Or):
+            terms = dnf_expression.args
+        else:
+            terms = [dnf_expression]
         minterms = []
-        tt = truth_table(self.condition, symbol_order)
-        for row in tt:
-            if row[1]:
-                minterms.append(term_to_integer(row[0]))
-        sorted_minterms = sorted(minterms)
-        return sorted_minterms
+        for term in terms:
+            minterm = []
+            for sym in symbol_order:
+                if term.has(sym):
+                    minterm.append(1)
+                elif term.has(~sym):
+                    minterm.append(0)
+                else:
+                    minterm.append(None)
+            minterms.append(minterm)
+        expanded_minterms = []
+        for minterm in minterms:
+            replacements = [(value,) if value is not None else (0, 1) for value in minterm]
+            expanded_minterms.extend(product(*replacements))
+        minterm_integers = []
+        for minterm in expanded_minterms:
+            binary_string = ''.join(str(bit) for bit in minterm)
+            minterm_integers.append(int(binary_string, 2))
+        return sorted(set(minterm_integers))
 
     def _get_boolean_expression_for_relevant_symbols(
         self, relevant_symbols=tuple[Symbol]
