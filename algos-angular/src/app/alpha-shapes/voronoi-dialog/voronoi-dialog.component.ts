@@ -6,7 +6,7 @@ import {
   MatDialogActions,
   MatDialogRef,
 } from '@angular/material/dialog';
-import { CdkDrag } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { VoronoiState } from '../canvas/drawingcontroller';
 import { AlphaShapesService } from '../alpha-shapes.service';
@@ -20,6 +20,7 @@ import { AlphaShapesService } from '../alpha-shapes.service';
     MatDialogContent,
     MatDialogActions,
     CdkDrag,
+    CdkDragHandle,
   ],
   templateUrl: './voronoi-dialog.component.html',
   styleUrl: './voronoi-dialog.component.scss',

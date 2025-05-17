@@ -16,7 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { HeaderEvent, HeaderEventService } from '../header-event.service';
 import { AlphaShapesService } from './alpha-shapes.service';
 
@@ -28,6 +28,7 @@ import { AlphaShapesService } from './alpha-shapes.service';
 })
 export class AlphaShapesComponent implements OnInit, AfterViewInit {
   readonly dialog = inject(MatDialog);
+  dialogRef: MatDialogRef<VoronoiDialogComponent> | undefined = undefined;
   voronoiState: VoronoiState | undefined = undefined;
 
   constructor(
@@ -37,14 +38,13 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.headerEventService.headerEvent$.subscribe((event) => {
-      if (event === HeaderEvent.VoronoiDialog) {
-        this.openVoronoiDialog();
+      if (event === HeaderEvent.VoronoiDialog && !this.dialogRef) {
+        this.dialogRef = this.dialog.open(VoronoiDialogComponent, { hasBackdrop: false });
+        this.dialogRef.afterClosed().subscribe(() => {
+          this.dialogRef = undefined;
+        });
       }
     });
-  }
-
-  openVoronoiDialog(): void {
-    this.dialog.open(VoronoiDialogComponent, { hasBackdrop: false });
   }
 
   @ViewChild('alphashape') canvas!: ElementRef;
