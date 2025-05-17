@@ -29,8 +29,6 @@ export class SharedData {
     static alphaMin: number = -100;
     static alphaMax: number = 100;
 
-    static sweepLine: number = 0;
-
     static selectedTriangle: number = 0;
 
     /**
@@ -42,6 +40,8 @@ export class SharedData {
 
         SharedData.points = SharedData.points.filter((point) => rect.containsPoint(point));
 
+        const sweepLine = Math.round(voronoiState.sweepLinePercentage / 100 * height);
+
         Computations.compute(
             SharedData.points,
             SharedData.alpha,
@@ -49,7 +49,7 @@ export class SharedData {
             0,
             width,
             height,
-            SharedData.sweepLine,
+            sweepLine,
             voronoiState,
         );
 

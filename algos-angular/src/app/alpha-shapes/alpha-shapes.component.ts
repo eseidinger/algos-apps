@@ -39,7 +39,10 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.headerEventService.headerEvent$.subscribe((event) => {
       if (event === HeaderEvent.VoronoiDialog && !this.dialogRef) {
-        this.dialogRef = this.dialog.open(VoronoiDialogComponent, { hasBackdrop: false });
+        this.dialogRef = this.dialog.open(VoronoiDialogComponent, {
+          hasBackdrop: false,
+          width: this.canvas.nativeElement.getBoundingClientRect().width,
+        });
         this.dialogRef.afterClosed().subscribe(() => {
           this.dialogRef = undefined;
         });
@@ -252,6 +255,7 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
       DrawingController.drawDiagrams(
         new CanvasDrawer(this.canvas.nativeElement),
         width,
+        height,
         this.voronoiState
       );
     }

@@ -26,7 +26,7 @@
   showVoronoiMin: boolean;
   showTriangles: boolean;
   showBeachLine: boolean;
-  beachLinePosition: number;
+  sweepLinePercentage: number;
   showDelaunayMax: boolean;
   showDelaunayMin: boolean;
 }
@@ -71,7 +71,8 @@
       *
       * @param canvasDrawer - The drawer to use for drawing
       */
-     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, voronoiState: VoronoiState): void {
+     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, canvasHeight: number, voronoiState: VoronoiState): void {
+        const sweepLinePosition = Math.round(voronoiState.sweepLinePercentage / 100 * canvasHeight);
          if (this.displayAlphaHull) {
              this.drawAlphaHull(canvasDrawer);
          }
@@ -93,8 +94,8 @@
          }
          if (voronoiState.showBeachLine) {
              const sweepLine = new LineSegment(
-                 new Vector(0, SharedData.sweepLine),
-                 new Vector(canvasWidth, SharedData.sweepLine)
+                 new Vector(0, sweepLinePosition),
+                 new Vector(canvasWidth, sweepLinePosition)
              );
              canvasDrawer.drawPathElements(
                  [sweepLine],

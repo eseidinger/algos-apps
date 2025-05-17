@@ -10,6 +10,7 @@ import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { VoronoiState } from '../canvas/drawingcontroller';
 import { AlphaShapesService } from '../alpha-shapes.service';
+import { MatSliderModule } from '@angular/material/slider';
 
 @Component({
   selector: 'app-voronoi-dialog',
@@ -21,6 +22,7 @@ import { AlphaShapesService } from '../alpha-shapes.service';
     MatDialogActions,
     CdkDrag,
     CdkDragHandle,
+    MatSliderModule,
   ],
   templateUrl: './voronoi-dialog.component.html',
   styleUrl: './voronoi-dialog.component.scss',
@@ -41,9 +43,39 @@ export class VoronoiDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  onVoronoiMinChange(checked: boolean): void {
+    this.alphaShapesService.updateVoronoiState({
+      showVoronoiMin: checked,
+    });
+  }
+
   onVoronoiMaxChange(checked: boolean): void {
     this.alphaShapesService.updateVoronoiState({
       showVoronoiMax: checked,
+    });
+  }
+
+  onDelaunayMinChange(checked: boolean): void {
+    this.alphaShapesService.updateVoronoiState({
+      showDelaunayMin: checked,
+    });
+  }
+
+  onDelaunayMaxChange(checked: boolean): void {
+    this.alphaShapesService.updateVoronoiState({
+      showDelaunayMax: checked,
+    });
+  }
+
+  onBeachLineChange(checked: boolean): void {
+    this.alphaShapesService.updateVoronoiState({
+      showBeachLine: checked,
+    });
+  }
+
+  onSweepLinePercentageChange(value: number): void {
+    this.alphaShapesService.updateVoronoiState({
+      sweepLinePercentage: value,
     });
   }
 }

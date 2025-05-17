@@ -1,18 +1,37 @@
-<h2
-  mat-dialog-title
-  cdkDrag
-  cdkDragRootElement=".cdk-overlay-pane"
-  cdkDragHandle
-  class="drag-handle"
->
+<h2 mat-dialog-title cdkDrag cdkDragRootElement=".cdk-overlay-pane" cdkDragHandle class="drag-handle">
   Voronoi Diagram Parameters
 </h2>
-<mat-dialog-content>
-  <mat-checkbox
-    [checked]="voronoiState?.showVoronoiMax"
-    (change)="onVoronoiMaxChange($event.checked)"
-    >Show Voronoi Max</mat-checkbox
-  >
+<mat-dialog-content class="content">
+  <div class="container">
+    <div>
+      <mat-checkbox [checked]="voronoiState?.showVoronoiMin" (change)="onVoronoiMinChange($event.checked)">Show
+        Voronoi
+        Min</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="voronoiState?.showVoronoiMax" (change)="onVoronoiMaxChange($event.checked)">Show
+        Voronoi
+        Max</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="voronoiState?.showDelaunayMin" (change)="onDelaunayMinChange($event.checked)">Show
+        Delaunay
+        Min</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="voronoiState?.showDelaunayMax" (change)="onDelaunayMaxChange($event.checked)">Show
+        Delaunay
+        Max</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="voronoiState?.showBeachLine" (change)="onBeachLineChange($event.checked)">Show
+        Beach Line</mat-checkbox>
+    </div>
+    <mat-slider min="0" max="100" step="1" class="slider">
+      <input matSliderThumb (valueChange)="onSweepLinePercentageChange($event)"
+        [value]="voronoiState?.sweepLinePercentage" />
+    </mat-slider>
+  </div>
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-button (click)="onCloseClick()">Close</button>

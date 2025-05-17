@@ -12,7 +12,7 @@ export class AlphaShapesService {
     showVoronoiMin: true,
     showTriangles: false,
     showBeachLine: false,
-    beachLinePosition: SharedData.sweepLine,
+    sweepLinePercentage: 0,
     showDelaunayMax: false,
     showDelaunayMin: false,
   });
