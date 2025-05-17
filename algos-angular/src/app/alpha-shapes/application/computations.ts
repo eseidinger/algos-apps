@@ -27,7 +27,7 @@ import { VoronoiDelaunay } from '../algo/voronoidelaunay';
 import { Skyum } from '../algo/skyum';
 import { Fortune, FortuneArc, FortuneBreakpoint } from '../algo/fortune';
 import { ConvexHull } from '../algo/convexhull';
-import { DrawingController } from '../canvas/drawingcontroller';
+import { DrawingController, VoronoiState } from '../canvas/drawingcontroller';
 import { EdgeList } from '../ds/dcel';
 import { Arc } from '../geom/arc';
 
@@ -78,7 +78,7 @@ export class Computations {
      * @param maxY - Maximum y coordinate of the viewport
      * @param ly - Sweep line position
      */
-    static compute(points: Vector[], alpha: number, minX: number, minY: number, maxX: number, maxY: number, ly: number): void {
+    static compute(points: Vector[], alpha: number, minX: number, minY: number, maxX: number, maxY: number, ly: number, voronoiState: VoronoiState): void {
         this.init();
 
         const rect = new Rectangle(minX, minY, maxX, maxY);
@@ -93,9 +93,9 @@ export class Computations {
         if (
             DrawingController.displayAlphaHull ||
             DrawingController.displayAlphaShape ||
-            DrawingController.displayBeachLine ||
-            DrawingController.displayDelaunayMin ||
-            DrawingController.displayVoronoiMin
+            voronoiState.showBeachLine ||
+            voronoiState.showDelaunayMin ||
+            voronoiState.showVoronoiMin
         ) {
             const fortuneResults = Fortune.computeVoronoiDiagram(points, ly);
             voronoiMin = fortuneResults.voronoiDiagram;
@@ -141,9 +141,9 @@ export class Computations {
         if (
             DrawingController.displayAlphaHull ||
             DrawingController.displayAlphaShape ||
-            DrawingController.displayTriangles ||
-            DrawingController.displayDelaunayMax ||
-            DrawingController.displayVoronoiMax ||
+            voronoiState.showTriangles ||
+            voronoiState.showDelaunayMax ||
+            voronoiState.showVoronoiMax ||
             DrawingController.displaySmallestCircle
         ) {
             const skyumResults = Skyum.computeVoronoiDiagram(convexHull);

@@ -1,4 +1,9 @@
-<mat-toolbar class="example-header">{{ title }}</mat-toolbar>
+<mat-toolbar class="example-header">
+  <div class="app-title">{{ title }}</div>
+  @if (isAlphaShapes()) {
+    <app-alpha-shapes-controls></app-alpha-shapes-controls>
+  }
+</mat-toolbar>
 
 <mat-sidenav-container class="example-container">
   <mat-sidenav #sidenav mode="side" opened class="example-sidenav">

@@ -21,6 +21,16 @@
  import { Computations } from '../application/computations';
  import { SharedData } from '../application/shareddata';
  
+ export interface VoronoiState {
+  showVoronoiMax: boolean;
+  showVoronoiMin: boolean;
+  showTriangles: boolean;
+  showBeachLine: boolean;
+  beachLinePosition: number;
+  showDelaunayMax: boolean;
+  showDelaunayMin: boolean;
+}
+
  export class DrawingController {
      // Constants for diagram appearance
      static convexHullLineWidth = 2;
@@ -52,14 +62,8 @@
      static displayAlphaShape = false;
      static displayAlphaHull = false;
      static displayAlphaDisc = false;
-     static displayDelaunayMin = true;
-     static displayVoronoiMin = true;
-     static displayBeachLine = false;
-     static displayTriangles = false;
      static displaySmallestCircle = false;
      static displayConvexHull = true;
-     static displayDelaunayMax = false;
-     static displayVoronoiMax = false;
  
 
      /**
@@ -67,11 +71,11 @@
       *
       * @param canvasDrawer - The drawer to use for drawing
       */
-     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number): void {
+     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, voronoiState: VoronoiState): void {
          if (this.displayAlphaHull) {
              this.drawAlphaHull(canvasDrawer);
          }
-         if (this.displayDelaunayMin) {
+         if (voronoiState.showDelaunayMin) {
              canvasDrawer.drawPathElements(
                  Computations.delaunayMin,
                  this.delaunayLineWidth,
@@ -79,7 +83,7 @@
                  this.delaunayOpacity
              );
          }
-         if (this.displayVoronoiMin) {
+         if (voronoiState.showVoronoiMin) {
              canvasDrawer.drawPathElements(
                  Computations.voronoiMin,
                  this.voronoiLineWidth,
@@ -87,7 +91,7 @@
                  this.voronoiOpacity
              );
          }
-         if (this.displayBeachLine) {
+         if (voronoiState.showBeachLine) {
              const sweepLine = new LineSegment(
                  new Vector(0, SharedData.sweepLine),
                  new Vector(canvasWidth, SharedData.sweepLine)
@@ -105,7 +109,7 @@
                  this.beachLineOpacity
              );
          }
-         if (this.displayDelaunayMax) {
+         if (voronoiState.showDelaunayMax) {
              canvasDrawer.drawPathElements(
                  Computations.delaunayMax,
                  this.delaunayLineWidth,
@@ -113,7 +117,7 @@
                  this.delaunayOpacity
              );
          }
-         if (this.displayVoronoiMax) {
+         if (voronoiState.showVoronoiMax) {
              canvasDrawer.drawPathElements(
                  Computations.voronoiMax,
                  this.voronoiLineWidth,
@@ -121,7 +125,7 @@
                  this.voronoiOpacity
              );
          }
-         if (this.displayTriangles) {
+         if (voronoiState.showTriangles) {
              if (SharedData.selectedTriangle > -1) {
                  canvasDrawer.drawPathElements(
                      Computations.voronoiMaxTriangles[SharedData.selectedTriangle],

@@ -19,6 +19,7 @@ import { Rectangle } from '../geom/rectangle';
 import constant from '../util/constant';
 import array from '../util/array';
 import { Computations } from './computations';
+import { VoronoiState } from '../canvas/drawingcontroller';
 
 export class SharedData {
     static points: Vector[] = [];
@@ -36,7 +37,7 @@ export class SharedData {
      * Calculate minimum and maximum alpha from significant alphas if available.
      * If no significant alphas are available, sets default values.
      */
-    static update(width: number, height: number): void {
+    static update(width: number, height: number, voronoiState: VoronoiState): void {
         const rect = new Rectangle(0, 0, width, height);
 
         SharedData.points = SharedData.points.filter((point) => rect.containsPoint(point));
@@ -48,7 +49,8 @@ export class SharedData {
             0,
             width,
             height,
-            SharedData.sweepLine
+            SharedData.sweepLine,
+            voronoiState,
         );
 
         if (Computations.significantAlphas.length === 0) {

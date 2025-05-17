@@ -1,0 +1,19 @@
+<h2
+  mat-dialog-title
+  cdkDrag
+  cdkDragRootElement=".cdk-overlay-pane"
+  cdkDragHandle
+  class="drag-handle"
+>
+  Voronoi Diagram Parameters
+</h2>
+<mat-dialog-content>
+  <mat-checkbox
+    [checked]="voronoiState?.showVoronoiMax"
+    (change)="onVoronoiMaxChange($event.checked)"
+    >Show Voronoi Max</mat-checkbox
+  >
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onCloseClick()">Close</button>
+</mat-dialog-actions>

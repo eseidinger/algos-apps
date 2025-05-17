@@ -28,11 +28,6 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "./node_modules/pyodide",
-                "output": "/"
-              },
-              {
-                "glob": "**/*",
                 "input": "public"
               }
             ],

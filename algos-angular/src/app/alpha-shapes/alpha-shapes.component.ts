@@ -1,17 +1,52 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { SharedData } from './application/shareddata';
 import array from './util/array';
 import { Vector } from './geom/vector';
-import { DrawingController } from './canvas/drawingcontroller';
+import { DrawingController, VoronoiState } from './canvas/drawingcontroller';
 import { CanvasDrawer } from './canvas/canvasdrawer';
+import { VoronoiDialogComponent } from './voronoi-dialog/voronoi-dialog.component';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialog } from '@angular/material/dialog';
+import { HeaderEvent, HeaderEventService } from '../header-event.service';
+import { AlphaShapesService } from './alpha-shapes.service';
 
 @Component({
   selector: 'app-alpha-shapes',
-  imports: [],
+  imports: [MatFormFieldModule, MatInputModule, FormsModule, MatButtonModule],
   templateUrl: './alpha-shapes.component.html',
-  styleUrl: './alpha-shapes.component.scss'
+  styleUrl: './alpha-shapes.component.scss',
 })
-export class AlphaShapesComponent {
+export class AlphaShapesComponent implements OnInit, AfterViewInit {
+  readonly dialog = inject(MatDialog);
+  voronoiState: VoronoiState | undefined = undefined;
+
+  constructor(
+    private headerEventService: HeaderEventService,
+    private alphaShapesService: AlphaShapesService
+  ) {}
+
+  ngOnInit(): void {
+    this.headerEventService.headerEvent$.subscribe((event) => {
+      if (event === HeaderEvent.VoronoiDialog) {
+        this.openVoronoiDialog();
+      }
+    });
+  }
+
+  openVoronoiDialog(): void {
+    this.dialog.open(VoronoiDialogComponent, { hasBackdrop: false });
+  }
+
   @ViewChild('alphashape') canvas!: ElementRef;
 
   dragState = { position: { x: 0, y: 0 }, dist: 0, selected: false };
@@ -23,13 +58,30 @@ export class AlphaShapesComponent {
   moveAlphaDisc = false;
 
   ngAfterViewInit() {
+    this.alphaShapesService.voronoiState$.subscribe((state) => {
+      this.voronoiState = state;
+      this.refresh();
+    });
+
     const canvas = this.canvas.nativeElement;
-    canvas.addEventListener('mousedown', (event: MouseEvent) => this.handleDragStart(event));
-    canvas.addEventListener('mousemove', (event: MouseEvent) => this.handleDragMove(event));
-    canvas.addEventListener('mouseup', (event: MouseEvent) => this.handleDragEnd(event));
-    canvas.addEventListener('touchstart', (event: TouchEvent) => this.handleDragStartTouch(event));
-    canvas.addEventListener('touchmove', (event: TouchEvent) => this.handleDragMoveTouch(event));
-    canvas.addEventListener('touchend', (event: TouchEvent) => this.handleDragEndTouch(event));
+    canvas.addEventListener('mousedown', (event: MouseEvent) =>
+      this.handleDragStart(event)
+    );
+    canvas.addEventListener('mousemove', (event: MouseEvent) =>
+      this.handleDragMove(event)
+    );
+    canvas.addEventListener('mouseup', (event: MouseEvent) =>
+      this.handleDragEnd(event)
+    );
+    canvas.addEventListener('touchstart', (event: TouchEvent) =>
+      this.handleDragStartTouch(event)
+    );
+    canvas.addEventListener('touchmove', (event: TouchEvent) =>
+      this.handleDragMoveTouch(event)
+    );
+    canvas.addEventListener('touchend', (event: TouchEvent) =>
+      this.handleDragEndTouch(event)
+    );
     window.addEventListener('resize', () => this.refresh());
     this.refresh();
   }
@@ -49,15 +101,13 @@ export class AlphaShapesComponent {
     return { x, y };
   }
 
-
   handleDragStart(event: MouseEvent) {
     if (!this.dragState.selected) {
       const position = this.getPosition(event);
       if (this.moveAlphaDisc) {
         this.dragStartAlphaDisc(position);
       } else {
-        this.dragStartPoint(position,
-          this.maxPointDist);
+        this.dragStartPoint(position, this.maxPointDist);
       }
     }
     event.preventDefault();
@@ -69,8 +119,7 @@ export class AlphaShapesComponent {
       if (this.moveAlphaDisc) {
         this.dragStartAlphaDisc(position);
       } else {
-        this.dragStartPoint(position,
-          this.maxPointDistTouch);
+        this.dragStartPoint(position, this.maxPointDistTouch);
       }
     }
     event.preventDefault();
@@ -80,9 +129,15 @@ export class AlphaShapesComponent {
     this.dragState.selected = true;
   }
 
-  dragStartPoint(position: { x: number, y: number }, maxDist: number) {
-    var pointIndex = array.indexOfElementWithMinimalDistance(SharedData.points,
-      new Vector(position.x, position.y), function (p1, p2) { return p1.dist(p2); }, maxDist);
+  dragStartPoint(position: { x: number; y: number }, maxDist: number) {
+    var pointIndex = array.indexOfElementWithMinimalDistance(
+      SharedData.points,
+      new Vector(position.x, position.y),
+      function (p1, p2) {
+        return p1.dist(p2);
+      },
+      maxDist
+    );
 
     if (pointIndex >= 0) {
       this.dragState.position.x = SharedData.points[pointIndex].x;
@@ -124,12 +179,16 @@ export class AlphaShapesComponent {
     this.refresh();
   }
 
-  dragMovePoint(position: { x: number, y: number }) {
-    SharedData.removePoint(this.dragState.position.x,
-      this.dragState.position.y, 1);
+  dragMovePoint(position: { x: number; y: number }) {
+    SharedData.removePoint(
+      this.dragState.position.x,
+      this.dragState.position.y,
+      1
+    );
     SharedData.addPoint(position.x, position.y);
-    var dist = new Vector(position.x, position.y).dist(new Vector(this.dragState.position.x,
-      this.dragState.position.y));
+    var dist = new Vector(position.x, position.y).dist(
+      new Vector(this.dragState.position.x, this.dragState.position.y)
+    );
     this.dragState.dist += dist;
     this.dragState.position = position;
     this.refresh();
@@ -140,8 +199,7 @@ export class AlphaShapesComponent {
     if (this.moveAlphaDisc) {
       this.dragEndAlphaDisc(position);
     } else {
-      this.dragEndPoint(position,
-        this.minMoveDist);
+      this.dragEndPoint(position, this.minMoveDist);
     }
     event.preventDefault();
   }
@@ -151,8 +209,7 @@ export class AlphaShapesComponent {
     if (this.moveAlphaDisc) {
       this.dragEndAlphaDisc(position);
     } else {
-      this.dragEndPoint(position,
-        this.minMoveDistTouch);
+      this.dragEndPoint(position, this.minMoveDistTouch);
     }
     event.preventDefault();
   }
@@ -163,12 +220,17 @@ export class AlphaShapesComponent {
     this.refresh();
   }
 
-  dragEndPoint(position: { x: number, y: number }, minDist: number) {
-    const dist = new Vector(position.x, position.y).dist(new Vector(this.dragState.position.x,
-      this.dragState.position.y)) + this.dragState.dist;
-    if (this.dragState.selected && (dist < this.minMoveDist)) {
-      SharedData.removePoint(this.dragState.position.x,
-        this.dragState.position.y, 1);
+  dragEndPoint(position: { x: number; y: number }, minDist: number) {
+    const dist =
+      new Vector(position.x, position.y).dist(
+        new Vector(this.dragState.position.x, this.dragState.position.y)
+      ) + this.dragState.dist;
+    if (this.dragState.selected && dist < this.minMoveDist) {
+      SharedData.removePoint(
+        this.dragState.position.x,
+        this.dragState.position.y,
+        1
+      );
     } else if (dist < minDist) {
       SharedData.addPoint(position.x, position.y);
     }
@@ -177,11 +239,21 @@ export class AlphaShapesComponent {
   }
 
   refresh() {
-    const width = Math.round(this.canvas.nativeElement.getBoundingClientRect().width);
-    const height = Math.round(this.canvas.nativeElement.getBoundingClientRect().height);
-    SharedData.update(width, height);
-    this.canvas.nativeElement.width = width;
-    this.canvas.nativeElement.height = height;
-    DrawingController.drawDiagrams(new CanvasDrawer(this.canvas.nativeElement), width);
+    if (this.voronoiState) {
+      const width = Math.round(
+        this.canvas.nativeElement.getBoundingClientRect().width
+      );
+      const height = Math.round(
+        this.canvas.nativeElement.getBoundingClientRect().height
+      );
+      SharedData.update(width, height, this.voronoiState);
+      this.canvas.nativeElement.width = width;
+      this.canvas.nativeElement.height = height;
+      DrawingController.drawDiagrams(
+        new CanvasDrawer(this.canvas.nativeElement),
+        width,
+        this.voronoiState
+      );
+    }
   }
 }
