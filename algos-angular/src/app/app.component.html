@@ -1,12 +1,12 @@
-<mat-toolbar class="example-header">
+<mat-toolbar class="app-header">
   <div class="app-title">{{ title }}</div>
   @if (isAlphaShapes()) {
     <app-alpha-shapes-controls></app-alpha-shapes-controls>
   }
 </mat-toolbar>
 
-<mat-sidenav-container class="example-container">
-  <mat-sidenav #sidenav mode="side" opened class="example-sidenav">
+<mat-sidenav-container class="app-container">
+  <mat-sidenav #sidenav mode="side" opened class="app-sidenav">
     <mat-nav-list role="navigation">
       <a mat-list-item routerLink="/alpha-shapes" routerLinkActive="active" ariaCurrentWhenActive="page">Alpha
         Shapes</a>
@@ -19,4 +19,4 @@
   </mat-sidenav-content>
 </mat-sidenav-container>
 
-<mat-toolbar class="example-footer">Footer</mat-toolbar>
+<mat-toolbar class="app-footer">Footer</mat-toolbar>

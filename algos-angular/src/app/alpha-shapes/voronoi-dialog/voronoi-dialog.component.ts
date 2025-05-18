@@ -73,9 +73,9 @@ export class VoronoiDialogComponent implements OnInit {
     });
   }
 
-  onSweepLinePercentageChange(value: number): void {
+  onSweepLinePercentageChange(event: any): void {
     this.alphaShapesService.updateVoronoiState({
-      sweepLinePercentage: value,
+      sweepLinePercentage: event.srcElement.value,
     });
   }
 }

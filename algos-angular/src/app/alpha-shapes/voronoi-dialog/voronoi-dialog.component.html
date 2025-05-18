@@ -28,7 +28,7 @@
         Beach Line</mat-checkbox>
     </div>
     <mat-slider min="0" max="100" step="1" class="slider">
-      <input matSliderThumb (valueChange)="onSweepLinePercentageChange($event)"
+      <input matSliderThumb (input)="onSweepLinePercentageChange($event)"
         [value]="voronoiState?.sweepLinePercentage" />
     </mat-slider>
   </div>

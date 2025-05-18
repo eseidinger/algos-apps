@@ -19,6 +19,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { HeaderEvent, HeaderEventService } from '../header-event.service';
 import { AlphaShapesService } from './alpha-shapes.service';
+import { Router } from '@angular/router';
+import { Apps, getAppName } from '../app.routes';
 
 @Component({
   selector: 'app-alpha-shapes',
@@ -32,9 +34,10 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
   voronoiState: VoronoiState | undefined = undefined;
 
   constructor(
+    private router: Router,
     private headerEventService: HeaderEventService,
     private alphaShapesService: AlphaShapesService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.headerEventService.headerEvent$.subscribe((event) => {
@@ -48,6 +51,14 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
         });
       }
     });
+    this.router.events.subscribe(() => {
+      if (getAppName(this.router.url.split('/')[1]) !== Apps.ALPHA_SHAPES) {
+        if (this.dialogRef) {
+          this.dialogRef.close();
+        }
+      }
+    });
+
   }
 
   @ViewChild('alphashape') canvas!: ElementRef;
