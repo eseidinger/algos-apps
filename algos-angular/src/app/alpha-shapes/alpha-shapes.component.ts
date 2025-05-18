@@ -21,6 +21,7 @@ import { HeaderEvent, HeaderEventService } from '../header-event.service';
 import { AlphaShapesService } from './alpha-shapes.service';
 import { Router } from '@angular/router';
 import { Apps, getAppName } from '../app.routes';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-alpha-shapes',
@@ -32,34 +33,8 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
   readonly dialog = inject(MatDialog);
   dialogRef: MatDialogRef<VoronoiDialogComponent> | undefined = undefined;
   voronoiState: VoronoiState | undefined = undefined;
-
-  constructor(
-    private router: Router,
-    private headerEventService: HeaderEventService,
-    private alphaShapesService: AlphaShapesService
-  ) { }
-
-  ngOnInit(): void {
-    this.headerEventService.headerEvent$.subscribe((event) => {
-      if (event === HeaderEvent.VoronoiDialog && !this.dialogRef) {
-        this.dialogRef = this.dialog.open(VoronoiDialogComponent, {
-          hasBackdrop: false,
-          width: this.canvas.nativeElement.getBoundingClientRect().width,
-        });
-        this.dialogRef.afterClosed().subscribe(() => {
-          this.dialogRef = undefined;
-        });
-      }
-    });
-    this.router.events.subscribe(() => {
-      if (getAppName(this.router.url.split('/')[1]) !== Apps.ALPHA_SHAPES) {
-        if (this.dialogRef) {
-          this.dialogRef.close();
-        }
-      }
-    });
-
-  }
+  private destroy$ = new Subject<void>();
+  private eventsInitialized = false;
 
   @ViewChild('alphashape') canvas!: ElementRef;
 
@@ -71,11 +46,51 @@ export class AlphaShapesComponent implements OnInit, AfterViewInit {
 
   moveAlphaDisc = false;
 
+  constructor(
+    private router: Router,
+    private headerEventService: HeaderEventService,
+    private alphaShapesService: AlphaShapesService
+  ) { }
+
+  ngOnInit(): void {
+    this.headerEventService.headerEvent$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        if (event === HeaderEvent.VoronoiDialog && !this.dialogRef) {
+          this.dialogRef = this.dialog.open(VoronoiDialogComponent, {
+            hasBackdrop: false,
+            width: this.canvas.nativeElement.getBoundingClientRect().width,
+          });
+          this.dialogRef.afterClosed().subscribe(() => {
+            this.dialogRef = undefined;
+          });
+        }
+      });
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (getAppName(this.router.url.split('/')[1]) !== Apps.ALPHA_SHAPES) {
+          if (this.dialogRef) {
+            this.dialogRef.close();
+          }
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    // Optionally, remove event listeners if needed
+  }
+
+
   ngAfterViewInit() {
-    this.alphaShapesService.voronoiState$.subscribe((state) => {
-      this.voronoiState = state;
-      this.refresh();
-    });
+    this.alphaShapesService.voronoiState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((state) => {
+        this.voronoiState = state;
+        this.refresh();
+      });
 
     const canvas = this.canvas.nativeElement;
     canvas.addEventListener('mousedown', (event: MouseEvent) =>

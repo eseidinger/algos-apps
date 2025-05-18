@@ -1,7 +1,7 @@
 <mat-toolbar class="app-header">
   <div class="app-title">{{ title }}</div>
   @if (isAlphaShapes()) {
-    <app-alpha-shapes-controls></app-alpha-shapes-controls>
+    <button mat-raised-button (click)="openVoronoiDialog()">Voronoi Controls</button>
   }
 </mat-toolbar>
 
