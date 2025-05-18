@@ -95,23 +95,6 @@ class TestVariant:
         variant = Variant(attributes)
         assert variant.to_dict() == {A: True, B: False}
 
-    def test_derive_variant(self):
-        """Test the derive_variant method of the Variant class.
-        The method derives a new variant from the original variant by setting
-        the value of a specific unset attribute to a value.
-        """
-        A, B, C = symbols("A, B, C")  # pylint: disable=invalid-name
-        attributes = [Attribute(A, True), Attribute(B, False), Attribute(C, None)]
-        variant = Variant(attributes)
-        derived_variant = variant.derive_variant(C, True)
-
-        assert derived_variant.get_sorted_attributes()[0].symbol == A
-        assert derived_variant.get_sorted_attributes()[1].symbol == B
-        assert derived_variant.get_sorted_attributes()[2].symbol == C
-        assert derived_variant.get_sorted_attributes()[0].value
-        assert not derived_variant.get_sorted_attributes()[1].value
-        assert derived_variant.get_sorted_attributes()[2].value
-
     def test_derive_variants(self):
         """Test the derive_variants method of the Variant class.
         This method derives a list of new variants from the original variant
@@ -202,74 +185,10 @@ class TestVariant:
         assert emtpy_variant.is_empty()
         assert not non_empty_variant.is_empty()
 
-    def test_as_minterms(self):
-        """Test the as_minterm method of the Variant class.
-        This method converts the variant to a minterm.
-        """
-        A, B, C = symbols("A, B, C")
-        attributes = [Attribute(A, True), Attribute(B, False), Attribute(C, False)]
-        variant = Variant(attributes)
-        assert variant.as_minterms([A, B, C]) == [4]
-
-        attributes = [Attribute(A, True), Attribute(B, False), Attribute(C, None)]
-        variant = Variant(attributes)
-        assert variant.as_minterms([A, B, C]) == [4, 5]
-
 class TestCondition:
     """Test the functionality of the Condition class.
     This class contains tests for the Condition class and its methods.
     """
-
-    def test_get_minterms(self):
-        """Test the conversion of a boolean expression to minterms.
-        This test checks if the minterms of a boolean expression are correct.
-        """
-        A, B, C = symbols("A, B, C")
-        bool_expr = B & (A | C)
-        condition = Condition(bool_expr)
-        assert condition._get_minterms(  # pylint: disable=protected-access
-            [A, B, C]
-        ) == [3, 6, 7]
-        assert condition._get_minterms(  # pylint: disable=protected-access
-            [B, C, A]
-        ) == [5, 6, 7]
-        assert condition._get_minterms(  # pylint: disable=protected-access
-            [C, A, B]
-        ) == [3, 5, 7]
-
-    def test_get_boolean_expression_for_relevant_symobls(self):
-        """Test the conversion of a boolean expression to a boolean expression
-        with only relevant symbols.
-        This test checks if the boolean expression with only relevant symbols
-        is correct.
-        """
-        A, B, C = symbols("A, B, C")
-        bool_expr = B & (A | C)
-        condition = Condition(bool_expr)
-
-        relevant_symbols = tuple([B])
-        relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
-            relevant_symbols
-        )
-        assert relevant_expr == B
-
-        relevant_symbols = (A, C)
-        relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
-            relevant_symbols
-        )
-        assert relevant_expr == A | C
-
-        relevant_symbols = tuple([C])
-        relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
-            relevant_symbols
-        )
-        assert relevant_expr == BooleanTrue()
-
-        relevant_symbols = tuple()
-        relevant_expr = condition._get_boolean_expression_for_relevant_symbols(  # pylint: disable=protected-access
-            relevant_symbols
-        )
-        assert relevant_expr == BooleanTrue()
 
     def test_check(self):
         """Test the check method of the Condition class.
@@ -295,6 +214,19 @@ class TestCondition:
         variant = Variant(attributes)
         assert not condition.check(variant)
 
+    def test_to_possible_variants(self):
+        """Test the to_possible_variants method of the Condition class.
+        This method checks if the condition can be converted to possible variants.
+        """
+        A, B, C = symbols("A, B, C")
+        bool_expr = B & (A | C)
+        condition = Condition(bool_expr)
+
+        possible_variants = [
+            Variant([Attribute(A, True), Attribute(B, True), Attribute(C, None)]),
+            Variant([Attribute(A, None), Attribute(B, True), Attribute(C, True)]),
+        ]
+        assert condition.to_possible_variants([A, B, C]) == possible_variants
 
 class TestVariantNode:
     """Test the functionality of the VariantNode class.

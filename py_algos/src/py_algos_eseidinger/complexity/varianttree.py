@@ -79,24 +79,6 @@ class Variant:
             if other_attr.value is not None
         )
 
-    def derive_variant(self, symbol: Symbol, value: bool) -> Self:
-        """Return a derived variant with a new attribute value
-        This means that the new attribute value is added to the variant
-
-        For example:
-        A, B, C = symbols("A, B, C")
-
-        original_variant = Variant([Attribute(A, True), Attribute(B, False), Attribute(C, None)])
-        derived_variant = original_variant.derive_variant(C, True)
-
-        derived_variant == Variant([Attribute(A, True), Attribute(B, False), Attribute(C, True)])
-        """
-        new_variant = deepcopy(self)
-        for attribute in new_variant.attributes:
-            if attribute.symbol == symbol:
-                attribute.value = value
-        return new_variant
-
     def derive_variants(
         self, next_symbols: list[Symbol], values: list[list[bool]]
     ) -> list[Self]:
@@ -145,31 +127,22 @@ class Variant:
     def is_empty(self) -> bool:
         """Return True if the variant is empty"""
         return all(attribute.value is None for attribute in self.attributes)
-    
-    def as_minterms(self, symbol_order: list[Symbol]) -> list[int]:
-        """Return the variant as a minterms
-        The minterm is a binary representation of the variant
-        The order of the symbols is determined by the symbol order
+
+    def solves(self, condition: "Condition") -> bool:
+        """Return True if the variant satisfies the condition
+        This method converts the condition to a list of possible variants
+        and checks if the variant is derived from or equal to any of the possible variants
         """
-        self_dict = self.to_dict()
-        minterm = []
-        for symbol in symbol_order:
-            if symbol in self_dict:
-                if self_dict[symbol] is True:
-                    minterm.append(1)
-                else:
-                    minterm.append(0)
-            else:
-                minterm.append(None)
-        expanded_minterms = [
-            (value,) if value is not None else (0, 1) for value in minterm
+        relevant_symbols = [
+            attribute.symbol
+            for attribute in self.attributes
+            if attribute.value is not None
         ]
-        expanded_minterms = list(product(*expanded_minterms))
-        minterm_integers = []
-        for minterm in expanded_minterms:
-            binary_string = ''.join(str(bit) for bit in minterm)
-            minterm_integers.append(int(binary_string, 2))
-        return sorted(set(minterm_integers))
+        possible_variants = condition.to_possible_variants(relevant_symbols)
+        return any(
+            self.is_derived_from_or_equal(possible_variant)
+            for possible_variant in possible_variants
+        )
 
 class Condition:  # pylint: disable=too-few-public-methods
     """
@@ -180,6 +153,7 @@ class Condition:  # pylint: disable=too-few-public-methods
     def __init__(self, condition: Boolean):
         self.lenient_conditions: dict[tuple[Symbol], Boolean] = {}
         self.condition = condition
+        self.dnf = to_dnf(condition)
 
     def check(self, variant: Variant) -> bool:
         """Check if the variant satisfies the condition
@@ -194,125 +168,29 @@ class Condition:  # pylint: disable=too-few-public-methods
         A = True, B = None, C = False
         because ignoring the value of B, the relevant expression is A | C
         """
-        relevant_symbols = [
-            attr.symbol for attr in variant.attributes if attr.value is not None
-        ]
-        relevant_symbols = sorted(
-            relevant_symbols, key=lambda x: str(x)  # pylint: disable=unnecessary-lambda
-        )
-        relevant_symbol_tuple = tuple(relevant_symbols)
-        relevant_condition = self._get_boolean_expression_for_relevant_symbols(
-            relevant_symbol_tuple
-        )
-        return relevant_condition.subs(variant.to_dict())
+        return variant.solves(self)
 
-    def _get_minterms(self, symbol_order: list[Symbol]) -> list[int]:
-        """Convert a boolean expression to a list of minterms
-        This method uses the truth table to get the minterms of the boolean expression
-
-        For example:
-        The boolean expression B & (A | C) has the following truth table for symbol order A, B, C:
-        A | B | C | B & (A | C)
-        -------------------------
-        0 | 0 | 0 | 0
-        0 | 0 | 1 | 0
-        0 | 1 | 0 | 0
-        0 | 1 | 1 | 1
-        1 | 0 | 0 | 0
-        1 | 0 | 1 | 0
-        1 | 1 | 0 | 1
-        1 | 1 | 1 | 1
-        The minterms are the binary input values of the rows where the result is 1
-        The minterms are:
-        3, 6, 7
+    def to_possible_variants(self, relevant_symbols: list[Symbol]) -> list[Variant]:
+        """Return the possible variants of the condition
+        This method uses the DNF of the condition to get the possible variants
+        The possible variants are the minterms of the DNF
         """
-        dnf_expression = to_dnf(self.condition)
-        if isinstance(dnf_expression, Or):
-            terms = dnf_expression.args
+        if isinstance(self.dnf, Or):
+            terms = self.dnf.args
         else:
-            terms = [dnf_expression]
-        minterms = []
+            terms = [self.dnf]
+        possible_variants = []
         for term in terms:
-            minterm = []
-            for sym in symbol_order:
+            attributes = []
+            for sym in relevant_symbols:
                 if term.has(sym):
-                    minterm.append(1)
+                    attributes.append(Attribute(sym, True))
                 elif term.has(~sym):
-                    minterm.append(0)
+                    attributes.append(Attribute(sym, False))
                 else:
-                    minterm.append(None)
-            minterms.append(minterm)
-        expanded_minterms = []
-        for minterm in minterms:
-            replacements = [(value,) if value is not None else (0, 1) for value in minterm]
-            expanded_minterms.extend(product(*replacements))
-        minterm_integers = []
-        for minterm in expanded_minterms:
-            binary_string = ''.join(str(bit) for bit in minterm)
-            minterm_integers.append(int(binary_string, 2))
-        return sorted(set(minterm_integers))
-
-    def _get_boolean_expression_for_relevant_symbols(
-        self, relevant_symbols=tuple[Symbol]
-    ) -> Boolean:
-        """Return a boolean expression where only the relevant symbols
-        have an influence on the result.
-        This method uses the minterms of the boolean expression to get
-        the relevant boolean expression
-
-        For example:
-        The boolean expression B & (A | C) has the following truth table:
-        A | B | C | B & (A | C)
-        -------------------------
-        0 | 0 | 0 | 0
-        0 | 0 | 1 | 0
-        0 | 1 | 0 | 0
-        0 | 1 | 1 | 1
-        1 | 0 | 0 | 0
-        1 | 0 | 1 | 0
-        1 | 1 | 0 | 1
-        1 | 1 | 1 | 1
-
-        If only symbols A and C are relevant, column B can be ignored,
-        which results in the following minterms:
-        A | C | ?
-        -------------------------
-        0 | 1 | 1
-        1 | 0 | 1
-        1 | 1 | 1
-
-        In this case it is obvious that the result is A | C
-
-        But in general the SOP / DNF can be calculated by using the minterms
-        of the boolean expression, which would be in this case:
-        (~A & C) | (A & ~C) | (A & C)
-        """
-        if relevant_symbols in self.lenient_conditions:
-            return self.lenient_conditions[relevant_symbols]
-        # The condition is always true if there are no relevant symbols
-        if len(relevant_symbols) == 0:
-            self.lenient_conditions[relevant_symbols] = BooleanTrue()
-            return BooleanTrue()
-        # relevant symbols come first in the ordered symbols
-        ordered_symbols = list(relevant_symbols)
-        ordered_symbols.extend(
-            [
-                symbol
-                for symbol in self.condition.free_symbols
-                if symbol not in relevant_symbols
-            ]
-        )
-        # The condition doesn't change if all symbols are relevant
-        if len(ordered_symbols) == len(relevant_symbols):
-            return self.condition
-        minterms = self._get_minterms(ordered_symbols)
-        nof_irrelevant_symbols = len(ordered_symbols) - len(relevant_symbols)
-        # The irrelevant symbols are the LSBs of the minterms and can be ignored by shifting
-        # the minterms to the right
-        minified_minterms = {minterm >> nof_irrelevant_symbols for minterm in minterms}
-        result = SOPform(relevant_symbols, minified_minterms)
-        self.lenient_conditions[relevant_symbols] = result
-        return result
+                    attributes.append(Attribute(sym, None))
+            possible_variants.append(Variant(attributes))
+        return possible_variants
 
 
 class Conditional(Protocol):  # pylint: disable=too-few-public-methods
@@ -455,7 +333,7 @@ class VariantNode(Generic[T]):
         self.current_symbols = current_symbols
         self.variant = variant
         self.conditionals = []
-        flat_symbols = [symbol for sublist in symbol_order for symbol in sublist]
+        flat_symbols = [sym for sublist in symbol_order for sym in sublist]
         if variant.is_final(flat_symbols):
             for conditional in all_conditionals:
                 if conditional.get_condition().check(variant):
@@ -470,8 +348,8 @@ class VariantNode(Generic[T]):
     @staticmethod
     def create_root_variant(symbol_order: list[list[Symbol]]) -> Variant:
         """Create a root variant with all symbols set to None"""
-        symbols_flat = [symbol for sublist in symbol_order for symbol in sublist]
-        return Variant([Attribute(symbol, None) for symbol in symbols_flat])
+        symbols_flat = [sym for sublist in symbol_order for sym in sublist]
+        return Variant([Attribute(sym, None) for sym in symbols_flat])
 
     @staticmethod
     def bool_from_integer(value: int, nof_bits: int) -> list[bool]:
@@ -629,14 +507,14 @@ class VariantNode(Generic[T]):
             leafs.extend(child.get_leafs())
         return leafs
 
-    def _symbol_to_string(self, symbol: Symbol) -> str:
+    def _symbol_to_string(self, sym: Symbol) -> str:
         """Convert a symbol to a string"""
         variant_map = self.variant.to_dict()
-        if symbol in variant_map:
-            if variant_map[symbol] is True:
-                return f"{symbol}"
-            return f"~{symbol}"
-        return str(symbol)
+        if sym in variant_map:
+            if variant_map[sym] is True:
+                return f"{sym}"
+            return f"~{sym}"
+        return str(sym)
 
     def __str__(self):
         conditional_str = ", ".join(map(str, self.conditionals))
