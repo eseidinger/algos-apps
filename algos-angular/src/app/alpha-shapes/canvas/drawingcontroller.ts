@@ -14,225 +14,230 @@
  limitations under the License.
  */
 
- import { Drawer } from './drawer';
- import { Vector } from '../geom/vector';
- import { PathElement } from '../geom/pathelement';
- import { LineSegment } from '../geom/linesegment';
- import { Computations } from '../application/computations';
- import { SharedData } from '../application/shareddata';
- 
- export interface VoronoiState {
-  showVoronoiMax: boolean;
-  showVoronoiMin: boolean;
-  showTriangles: boolean;
-  showBeachLine: boolean;
-  sweepLinePercentage: number;
-  showDelaunayMax: boolean;
-  showDelaunayMin: boolean;
+import { Drawer } from './drawer';
+import { Vector } from '../geom/vector';
+import { PathElement } from '../geom/pathelement';
+import { LineSegment } from '../geom/linesegment';
+import { ComputationOutput } from '../application/computations';
+
+export interface AlphaShapesInputState {
+    showVoronoiMax: boolean;
+    showVoronoiMin: boolean;
+    showTriangles: boolean;
+    selectedTriangle: number;
+    showBeachLine: boolean;
+    sweepLinePercentage: number;
+    showDelaunayMax: boolean;
+    showDelaunayMin: boolean;
+    alpha: number;
+    alphaMin: number;
+    alphaMax: number;
+    alphaDiscCenter: Vector;
+    points: Vector[];
 }
 
- export class DrawingController {
-     // Constants for diagram appearance
-     static convexHullLineWidth = 2;
-     static convexHullColor = '#000000';
-     static convexHullOpacity = 1;
-     static smallestCircleLineWidth = 2;
-     static smallestCircleColor = '#000000';
-     static smallestCircleOpacity = 1;
-     static voronoiLineWidth = 2;
-     static voronoiColor = '#0000ff';
-     static voronoiOpacity = 0.5;
-     static beachLineLineWidth = 2;
-     static beachLineColor = '#008000';
-     static beachLineOpacity = 0.5;
-     static trianglesLineWidth = 2;
-     static trianglesColor = '#008000';
-     static trianglesOpacity = 0.5;
-     static delaunayLineWidth = 2;
-     static delaunayColor = '#ff0000';
-     static delaunayOpacity = 0.5;
-     static alphaShapeLineWidth = 10;
-     static alphaShapePointSize = 12;
-     static alphaShapeColor = '#ff0000';
-     static alphaShapeOpacity = 0.2;
-     static alphaHullColor = '#008000';
-     static alphaHullOpacity = 0.2;
- 
-     // Variables to control which diagrams are displayed
-     static displayAlphaShape = false;
-     static displayAlphaHull = false;
-     static displayAlphaDisc = false;
-     static displaySmallestCircle = false;
-     static displayConvexHull = true;
- 
+export class DrawingController {
+    // Constants for diagram appearance
+    static convexHullLineWidth = 2;
+    static convexHullColor = '#000000';
+    static convexHullOpacity = 1;
+    static smallestCircleLineWidth = 2;
+    static smallestCircleColor = '#000000';
+    static smallestCircleOpacity = 1;
+    static voronoiLineWidth = 2;
+    static voronoiColor = '#0000ff';
+    static voronoiOpacity = 0.5;
+    static beachLineLineWidth = 2;
+    static beachLineColor = '#008000';
+    static beachLineOpacity = 0.5;
+    static trianglesLineWidth = 2;
+    static trianglesColor = '#008000';
+    static trianglesOpacity = 0.5;
+    static delaunayLineWidth = 2;
+    static delaunayColor = '#ff0000';
+    static delaunayOpacity = 0.5;
+    static alphaShapeLineWidth = 10;
+    static alphaShapePointSize = 12;
+    static alphaShapeColor = '#ff0000';
+    static alphaShapeOpacity = 0.2;
+    static alphaHullColor = '#008000';
+    static alphaHullOpacity = 0.2;
 
-     /**
-      * Draw diagrams using the given canvas drawer.
-      *
-      * @param canvasDrawer - The drawer to use for drawing
-      */
-     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, canvasHeight: number, voronoiState: VoronoiState): void {
-        const sweepLinePosition = Math.round(voronoiState.sweepLinePercentage / 100 * canvasHeight);
-         if (this.displayAlphaHull) {
-             this.drawAlphaHull(canvasDrawer);
-         }
-         if (voronoiState.showDelaunayMin) {
-             canvasDrawer.drawPathElements(
-                 Computations.delaunayMin,
-                 this.delaunayLineWidth,
-                 this.delaunayColor,
-                 this.delaunayOpacity
-             );
-         }
-         if (voronoiState.showVoronoiMin) {
-             canvasDrawer.drawPathElements(
-                 Computations.voronoiMin,
-                 this.voronoiLineWidth,
-                 this.voronoiColor,
-                 this.voronoiOpacity
-             );
-         }
-         if (voronoiState.showBeachLine) {
-             const sweepLine = new LineSegment(
-                 new Vector(0, sweepLinePosition),
-                 new Vector(canvasWidth, sweepLinePosition)
-             );
-             canvasDrawer.drawPathElements(
-                 [sweepLine],
-                 this.beachLineLineWidth,
-                 this.beachLineColor,
-                 this.beachLineOpacity
-             );
-             canvasDrawer.drawPath(
-                 Computations.voronoiMinBeachLine,
-                 this.beachLineLineWidth,
-                 this.beachLineColor,
-                 this.beachLineOpacity
-             );
-         }
-         if (voronoiState.showDelaunayMax) {
-             canvasDrawer.drawPathElements(
-                 Computations.delaunayMax,
-                 this.delaunayLineWidth,
-                 this.delaunayColor,
-                 this.delaunayOpacity
-             );
-         }
-         if (voronoiState.showVoronoiMax) {
-             canvasDrawer.drawPathElements(
-                 Computations.voronoiMax,
-                 this.voronoiLineWidth,
-                 this.voronoiColor,
-                 this.voronoiOpacity
-             );
-         }
-         if (voronoiState.showTriangles) {
-             if (SharedData.selectedTriangle > -1) {
-                 canvasDrawer.drawPathElements(
-                     Computations.voronoiMaxTriangles[SharedData.selectedTriangle],
-                     this.trianglesLineWidth,
-                     this.trianglesColor,
-                     this.trianglesOpacity
-                 );
-                 if (Computations.voronoiMaxCenters[SharedData.selectedTriangle] !== null) {
-                     canvasDrawer.drawPoints(
-                         [Computations.voronoiMaxCenters[SharedData.selectedTriangle]!],
-                         10,
-                         this.trianglesColor,
-                         0.5
-                     );
-                 }
-                 canvasDrawer.drawPathElements(
-                     Computations.voronoiMaxCircles[SharedData.selectedTriangle],
-                     this.trianglesLineWidth,
-                     this.trianglesColor,
-                     this.trianglesOpacity
-                 );
-             }
-         }
-         if (this.displaySmallestCircle) {
-             canvasDrawer.drawPathElements(Computations.smallestCircle, 1, 'black', 1);
-         }
-         if (this.displayConvexHull) {
-             canvasDrawer.drawPathElements(Computations.convexHull, 1, 'black', 1);
-         }
-         if (this.displayAlphaShape) {
-             this.drawAlphaShape(canvasDrawer);
-         }
-         canvasDrawer.drawPoints(SharedData.points, 5, 'black', 1);
-         if (this.displayAlphaDisc) {
-             this.drawAlphaDisc(canvasDrawer);
-         }
-     }
- 
-     /**
-      * Draw alpha shape using the given canvas drawer.
-      *
-      * @param canvasDrawer - The drawer to use for drawing
-      */
-     static drawAlphaShape(canvasDrawer: Drawer): void {
-         canvasDrawer.drawPathElements(
-             Computations.alphaShapeEdges,
-             this.alphaShapeLineWidth,
-             this.alphaShapeColor,
-             this.alphaShapeOpacity
-         );
-         canvasDrawer.drawPoints(
-             Computations.alphaShapeVertices,
-             this.alphaShapePointSize,
-             this.alphaShapeColor,
-             this.alphaShapeOpacity
-         );
-     }
- 
-     /**
-      * Draw alpha hull using the given canvas drawer.
-      *
-      * @param canvasDrawer - The drawer to use for drawing
-      */
-     static drawAlphaHull(canvasDrawer: Drawer): void {
-         if (SharedData.points.length > 1) {
-             canvasDrawer.fillCanvas(this.alphaHullColor, this.alphaHullOpacity);
-             if (SharedData.alpha < 0) {
-                 Computations.alphaHull.forEach((path: PathElement[]) => {
-                     canvasDrawer.fillPathInverted(path, 'white', 1);
-                 });
-             } else if (SharedData.alpha > 0) {
-                 Computations.alphaHull.forEach((path: PathElement[]) => {
-                     canvasDrawer.fillPath(path, 'white', 1);
-                 });
-             }
-         }
-     }
- 
-     /**
-      * Draw alpha disc using the given canvas drawer.
-      *
-      * @param canvasDrawer - The drawer to use for drawing
-      */
-     static drawAlphaDisc(canvasDrawer: Drawer): void {
-         let color = 'green';
-         if (SharedData.alpha < 0) {
-             SharedData.points.forEach((point: Vector) => {
-                 if (SharedData.alphaDiscCenter.dist(point) > -SharedData.alpha) {
-                     color = 'red';
-                 }
-             });
-         } else {
-             SharedData.points.forEach((point: Vector) => {
-                 if (SharedData.alphaDiscCenter.dist(point) < SharedData.alpha) {
-                     color = 'red';
-                 }
-             });
-         }
-         canvasDrawer.drawPoints([SharedData.alphaDiscCenter], 5, color, 0.2);
-         if (SharedData.alpha !== 0) {
-             canvasDrawer.drawPoints(
-                 [SharedData.alphaDiscCenter],
-                 Math.abs(SharedData.alpha),
-                 color,
-                 0.2
-             );
-         }
-     } 
- }
+    // Variables to control which diagrams are displayed
+    static displayAlphaShape = false;
+    static displayAlphaHull = false;
+    static displayAlphaDisc = false;
+    static displaySmallestCircle = false;
+    static displayConvexHull = true;
+
+
+    /**
+     * Draw diagrams using the given canvas drawer.
+     *
+     * @param canvasDrawer - The drawer to use for drawing
+     */
+    static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, canvasHeight: number, alphaShapesInputState: AlphaShapesInputState, computationOutput: ComputationOutput): void {
+        const sweepLinePosition = Math.round(alphaShapesInputState.sweepLinePercentage / 100 * canvasHeight);
+        if (this.displayAlphaHull) {
+            this.drawAlphaHull(canvasDrawer, computationOutput, alphaShapesInputState);
+        }
+        if (alphaShapesInputState.showDelaunayMin) {
+            canvasDrawer.drawPathElements(
+                computationOutput.delaunayMin,
+                this.delaunayLineWidth,
+                this.delaunayColor,
+                this.delaunayOpacity
+            );
+        }
+        if (alphaShapesInputState.showVoronoiMin) {
+            canvasDrawer.drawPathElements(
+                computationOutput.voronoiMin,
+                this.voronoiLineWidth,
+                this.voronoiColor,
+                this.voronoiOpacity
+            );
+        }
+        if (alphaShapesInputState.showBeachLine) {
+            const sweepLine = new LineSegment(
+                new Vector(0, sweepLinePosition),
+                new Vector(canvasWidth, sweepLinePosition)
+            );
+            canvasDrawer.drawPathElements(
+                [sweepLine],
+                this.beachLineLineWidth,
+                this.beachLineColor,
+                this.beachLineOpacity
+            );
+            canvasDrawer.drawPath(
+                computationOutput.voronoiMinBeachLine,
+                this.beachLineLineWidth,
+                this.beachLineColor,
+                this.beachLineOpacity
+            );
+        }
+        if (alphaShapesInputState.showDelaunayMax) {
+            canvasDrawer.drawPathElements(
+                computationOutput.delaunayMax,
+                this.delaunayLineWidth,
+                this.delaunayColor,
+                this.delaunayOpacity
+            );
+        }
+        if (alphaShapesInputState.showVoronoiMax) {
+            canvasDrawer.drawPathElements(
+                computationOutput.voronoiMax,
+                this.voronoiLineWidth,
+                this.voronoiColor,
+                this.voronoiOpacity
+            );
+        }
+        if (alphaShapesInputState.showTriangles) {
+            if (alphaShapesInputState.selectedTriangle > -1) {
+                canvasDrawer.drawPathElements(
+                    computationOutput.voronoiMaxTriangles[alphaShapesInputState.selectedTriangle],
+                    this.trianglesLineWidth,
+                    this.trianglesColor,
+                    this.trianglesOpacity
+                );
+                if (computationOutput.voronoiMaxCenters[alphaShapesInputState.selectedTriangle] !== null) {
+                    canvasDrawer.drawPoints(
+                        [computationOutput.voronoiMaxCenters[alphaShapesInputState.selectedTriangle]!],
+                        10,
+                        this.trianglesColor,
+                        0.5
+                    );
+                }
+                canvasDrawer.drawPathElements(
+                    computationOutput.voronoiMaxCircles[alphaShapesInputState.selectedTriangle],
+                    this.trianglesLineWidth,
+                    this.trianglesColor,
+                    this.trianglesOpacity
+                );
+            }
+        }
+        if (this.displaySmallestCircle) {
+            canvasDrawer.drawPathElements(computationOutput.smallestCircle, 1, 'black', 1);
+        }
+        if (this.displayConvexHull) {
+            canvasDrawer.drawPathElements(computationOutput.convexHull, 1, 'black', 1);
+        }
+        if (this.displayAlphaShape) {
+            this.drawAlphaShape(canvasDrawer, computationOutput);
+        }
+        canvasDrawer.drawPoints(alphaShapesInputState.points, 5, 'black', 1);
+        if (this.displayAlphaDisc) {
+            this.drawAlphaDisc(canvasDrawer, alphaShapesInputState);
+        }
+    }
+
+    /**
+     * Draw alpha shape using the given canvas drawer.
+     *
+     * @param canvasDrawer - The drawer to use for drawing
+     */
+    static drawAlphaShape(canvasDrawer: Drawer, computationOutput: ComputationOutput): void {
+        canvasDrawer.drawPathElements(
+            computationOutput.alphaShapeEdges,
+            this.alphaShapeLineWidth,
+            this.alphaShapeColor,
+            this.alphaShapeOpacity
+        );
+        canvasDrawer.drawPoints(
+            computationOutput.alphaShapeVertices,
+            this.alphaShapePointSize,
+            this.alphaShapeColor,
+            this.alphaShapeOpacity
+        );
+    }
+
+    /**
+     * Draw alpha hull using the given canvas drawer.
+     *
+     * @param canvasDrawer - The drawer to use for drawing
+     */
+    static drawAlphaHull(canvasDrawer: Drawer, computationOutput: ComputationOutput, alphaShapesInputState: AlphaShapesInputState): void {
+        if (alphaShapesInputState.points.length > 1) {
+            canvasDrawer.fillCanvas(this.alphaHullColor, this.alphaHullOpacity);
+            if (alphaShapesInputState.alpha < 0) {
+                computationOutput.alphaHull.forEach((path: PathElement[]) => {
+                    canvasDrawer.fillPathInverted(path, 'white', 1);
+                });
+            } else if (alphaShapesInputState.alpha > 0) {
+                computationOutput.alphaHull.forEach((path: PathElement[]) => {
+                    canvasDrawer.fillPath(path, 'white', 1);
+                });
+            }
+        }
+    }
+
+    /**
+     * Draw alpha disc using the given canvas drawer.
+     *
+     * @param canvasDrawer - The drawer to use for drawing
+     */
+    static drawAlphaDisc(canvasDrawer: Drawer, alphaShapesInputState: AlphaShapesInputState): void {
+        let color = 'green';
+        if (alphaShapesInputState.alpha < 0) {
+            alphaShapesInputState.points.forEach((point: Vector) => {
+                if (alphaShapesInputState.alphaDiscCenter.dist(point) > -alphaShapesInputState.alpha) {
+                    color = 'red';
+                }
+            });
+        } else {
+            alphaShapesInputState.points.forEach((point: Vector) => {
+                if (alphaShapesInputState.alphaDiscCenter.dist(point) < alphaShapesInputState.alpha) {
+                    color = 'red';
+                }
+            });
+        }
+        canvasDrawer.drawPoints([alphaShapesInputState.alphaDiscCenter], 5, color, 0.2);
+        if (alphaShapesInputState.alpha !== 0) {
+            canvasDrawer.drawPoints(
+                [alphaShapesInputState.alphaDiscCenter],
+                Math.abs(alphaShapesInputState.alpha),
+                color,
+                0.2
+            );
+        }
+    }
+}

@@ -1,11 +1,11 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { SharedData } from '../application/shareddata';
 import { CanvasDrawer } from '../canvas/canvasdrawer';
-import { DrawingController, VoronoiState } from '../canvas/drawingcontroller';
+import { DrawingController, AlphaShapesInputState } from '../canvas/drawingcontroller';
 import { Vector } from '../geom/vector';
 import array from '../util/array';
 import { AlphaShapesService } from '../alpha-shapes.service';
+import { Computations } from '../application/computations';
 
 @Component({
   selector: 'app-alpha-shapes-surface',
@@ -18,7 +18,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   @ViewChild('alphashape') canvas!: ElementRef;
   private destroy$ = new Subject<void>();
 
-  voronoiState: VoronoiState | undefined = undefined;
+  alphaShapesInputState: AlphaShapesInputState | undefined = undefined;
 
   dragState = { position: { x: 0, y: 0 }, dist: 0, selected: false };
   minMoveDist = 3;
@@ -33,10 +33,10 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   ) { }
 
   ngAfterViewInit() {
-    this.alphaShapesService.voronoiState$
+    this.alphaShapesService.alphaShapesInput$
       .pipe(takeUntil(this.destroy$))
       .subscribe((state) => {
-        this.voronoiState = state;
+        this.alphaShapesInputState = state;
         this.refresh();
       });
 
@@ -108,7 +108,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
 
   dragStartPoint(position: { x: number; y: number }, maxDist: number) {
     var pointIndex = array.indexOfElementWithMinimalDistance(
-      SharedData.points,
+      this.alphaShapesService.getPoints(),
       new Vector(position.x, position.y),
       function (p1, p2) {
         return p1.dist(p2);
@@ -117,8 +117,8 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
     );
 
     if (pointIndex >= 0) {
-      this.dragState.position.x = SharedData.points[pointIndex].x;
-      this.dragState.position.y = SharedData.points[pointIndex].y;
+      this.dragState.position.x = this.alphaShapesService.getPoints()[pointIndex].x;
+      this.dragState.position.y = this.alphaShapesService.getPoints()[pointIndex].y;
 
       this.dragState.selected = true;
     } else {
@@ -152,23 +152,21 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   }
 
   dragMoveAlphaDisc(position: { x: number; y: number }) {
-    SharedData.alphaDiscCenter = new Vector(position.x, position.y);
-    this.refresh();
+    this.alphaShapesService.setAlphaDiscCenter(position.x, position.y);
   }
 
   dragMovePoint(position: { x: number; y: number }) {
-    SharedData.removePoint(
+    this.alphaShapesService.removePoint(
       this.dragState.position.x,
       this.dragState.position.y,
       1
     );
-    SharedData.addPoint(position.x, position.y);
+    this.alphaShapesService.addPoint(new Vector(position.x, position.y));
     var dist = new Vector(position.x, position.y).dist(
       new Vector(this.dragState.position.x, this.dragState.position.y)
     );
     this.dragState.dist += dist;
     this.dragState.position = position;
-    this.refresh();
   }
 
   handleDragEnd(event: MouseEvent) {
@@ -192,9 +190,8 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   }
 
   dragEndAlphaDisc(position: { x: number; y: number }) {
-    SharedData.alphaDiscCenter = new Vector(position.x, position.y);
+    this.alphaShapesService.setAlphaDiscCenter(position.x, position.y);
     this.dragState.selected = false;
-    this.refresh();
   }
 
   dragEndPoint(position: { x: number; y: number }, minDist: number) {
@@ -203,36 +200,36 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
         new Vector(this.dragState.position.x, this.dragState.position.y)
       ) + this.dragState.dist;
     if (this.dragState.selected && dist < this.minMoveDist) {
-      SharedData.removePoint(
+      this.alphaShapesService.removePoint(
         this.dragState.position.x,
         this.dragState.position.y,
         1
       );
     } else if (dist < minDist) {
-      SharedData.addPoint(position.x, position.y);
+      this.alphaShapesService.addPoint(new Vector(position.x, position.y));
     }
     this.dragState.selected = false;
-    this.refresh();
   }
 
   refresh() {
-    if (this.voronoiState) {
+    if (this.alphaShapesInputState) {
       const width = Math.round(
         this.canvas.nativeElement.getBoundingClientRect().width
       );
       const height = Math.round(
         this.canvas.nativeElement.getBoundingClientRect().height
       );
-      SharedData.update(width, height, this.voronoiState);
+      const computationOutput = Computations.compute(0, 0, width, height, this.alphaShapesInputState);
+      this.alphaShapesService.setComputationOutput(computationOutput);
       this.canvas.nativeElement.width = width;
       this.canvas.nativeElement.height = height;
       DrawingController.drawDiagrams(
         new CanvasDrawer(this.canvas.nativeElement),
         width,
         height,
-        this.voronoiState
+        this.alphaShapesInputState,
+        computationOutput,
       );
     }
   }
-
 }

@@ -27,45 +27,27 @@ import { VoronoiDelaunay } from '../algo/voronoidelaunay';
 import { Skyum } from '../algo/skyum';
 import { Fortune, FortuneArc, FortuneBreakpoint } from '../algo/fortune';
 import { ConvexHull } from '../algo/convexhull';
-import { DrawingController, VoronoiState } from '../canvas/drawingcontroller';
+import { DrawingController, AlphaShapesInputState } from '../canvas/drawingcontroller';
 import { EdgeList } from '../ds/dcel';
-import { Arc } from '../geom/arc';
+
+export interface ComputationOutput {
+    convexHull: Polygon[];
+    voronoiMin: LineSegment[];
+    voronoiMinBeachLine: Bezier[];
+    delaunayMin: LineSegment[];
+    voronoiMax: LineSegment[];
+    voronoiMaxTriangles: LineSegment[][];
+    voronoiMaxCenters: Vector[];
+    voronoiMaxCircles: PathElement[][];
+    smallestCircle: PathElement[];
+    delaunayMax: LineSegment[];
+    significantAlphas: number[];
+    alphaShapeEdges: LineSegment[];
+    alphaShapeVertices: Vector[];
+    alphaHull: PathElement[][];
+}
 
 export class Computations {
-    static convexHull: Polygon[] = [];
-    static voronoiMin: LineSegment[] = [];
-    static voronoiMinBeachLine: Bezier[] = [];
-    static delaunayMin: LineSegment[] = [];
-    static voronoiMax: LineSegment[] = [];
-    static voronoiMaxTriangles: LineSegment[][] = [];
-    static voronoiMaxCenters: Vector[] = [];
-    static voronoiMaxCircles: PathElement[][] = [];
-    static smallestCircle: PathElement[] = [];
-    static delaunayMax: LineSegment[] = [];
-    static significantAlphas: number[] = [];
-    static alphaShapeEdges: LineSegment[] = [];
-    static alphaShapeVertices: Vector[] = [];
-    static alphaHull: PathElement[][] = [];
-
-    /**
-     * Initialize the computation result arrays.
-     */
-    static init(): void {
-        this.convexHull = [];
-        this.voronoiMin = [];
-        this.voronoiMinBeachLine = [];
-        this.delaunayMin = [];
-        this.voronoiMax = [];
-        this.voronoiMaxTriangles = [];
-        this.voronoiMaxCenters = [];
-        this.voronoiMaxCircles = [];
-        this.smallestCircle = [];
-        this.delaunayMax = [];
-        this.significantAlphas = [];
-        this.alphaShapeEdges = [];
-        this.alphaShapeVertices = [];
-        this.alphaHull = [];
-    }
 
     /**
      * Compute alpha shape and hull including diagrams they are based on.
@@ -76,16 +58,34 @@ export class Computations {
      * @param minY - Minimum y coordinate of the viewport
      * @param maxX - Maximum x coordinate of the viewport
      * @param maxY - Maximum y coordinate of the viewport
-     * @param ly - Sweep line position
+     * @param sweepLine - Sweep line position
      */
-    static compute(points: Vector[], alpha: number, minX: number, minY: number, maxX: number, maxY: number, ly: number, voronoiState: VoronoiState): void {
-        this.init();
-
+    static compute(minX: number, minY: number, maxX: number, maxY: number, alphaShapesInputState: AlphaShapesInputState): ComputationOutput {
+        const computationOutput: ComputationOutput = {
+            convexHull: [],
+            voronoiMin: [],
+            voronoiMinBeachLine: [],
+            delaunayMin: [],
+            voronoiMax: [],
+            voronoiMaxTriangles: [],
+            voronoiMaxCenters: [],
+            voronoiMaxCircles: [],
+            smallestCircle: [],
+            delaunayMax: [],
+            significantAlphas: [],
+            alphaShapeEdges: [],
+            alphaShapeVertices: [],
+            alphaHull: [],
+        };
         const rect = new Rectangle(minX, minY, maxX, maxY);
 
-        const convexHull = ConvexHull.compute(points);
+        const relevantPoints = alphaShapesInputState.points.filter((point) => rect.containsPoint(point));
+
+        const sweepLine = Math.round(alphaShapesInputState.sweepLinePercentage / 100 * maxY);
+
+        const convexHull = ConvexHull.compute(relevantPoints);
         if (convexHull.length > 0) {
-            this.convexHull.push(new Polygon(convexHull, true));
+            computationOutput.convexHull.push(new Polygon(convexHull, true));
         }
         let voronoiMin: EdgeList | null = null;
         let voronoiMax: EdgeList | null = null;
@@ -93,17 +93,17 @@ export class Computations {
         if (
             DrawingController.displayAlphaHull ||
             DrawingController.displayAlphaShape ||
-            voronoiState.showBeachLine ||
-            voronoiState.showDelaunayMin ||
-            voronoiState.showVoronoiMin
+            alphaShapesInputState.showBeachLine ||
+            alphaShapesInputState.showDelaunayMin ||
+            alphaShapesInputState.showVoronoiMin
         ) {
-            const fortuneResults = Fortune.computeVoronoiDiagram(points, ly);
+            const fortuneResults = Fortune.computeVoronoiDiagram(relevantPoints, sweepLine);
             voronoiMin = fortuneResults.voronoiDiagram;
 
             voronoiMin.getLineSegments().forEach((lineSegment) => {
                 const cropped = lineSegment.crop(rect);
                 if (cropped !== null) {
-                    this.voronoiMin.push(cropped);
+                    computationOutput.voronoiMin.push(cropped);
                 }
             });
 
@@ -111,98 +111,100 @@ export class Computations {
                 fortuneResults.constructionBeachLine.length === 1 &&
                 fortuneResults.constructionBeachLine[0] instanceof FortuneArc
             ) {
-                this.voronoiMinBeachLine.push(
-                    fortuneResults.constructionBeachLine[0].toBezier(minX, maxX, ly)!
+                computationOutput.voronoiMinBeachLine.push(
+                    fortuneResults.constructionBeachLine[0].toBezier(minX, maxX, sweepLine)!
                 );
             } else {
                 let lastX = minX;
                 fortuneResults.constructionBeachLine.forEach((bp, i, arr) => {
                     if (bp instanceof FortuneBreakpoint) {
-                        const bpLocation = bp.getLocation(ly);
+                        const bpLocation = bp.getLocation(sweepLine);
                         const xMin = lastX;
                         const xMax = bpLocation.x > maxX ? maxX : bpLocation.x;
                         lastX = xMax;
-                        const bezier = bp.leftArc.toBezier(xMin, xMax, ly);
+                        const bezier = bp.leftArc.toBezier(xMin, xMax, sweepLine);
                         if (bezier !== null) {
-                            this.voronoiMinBeachLine.push(bezier);
+                            computationOutput.voronoiMinBeachLine.push(bezier);
                         }
                         if (i === arr.length - 1) {
-                            const bezier = bp.rightArc.toBezier(lastX, maxX, ly);
+                            const bezier = bp.rightArc.toBezier(lastX, maxX, sweepLine);
                             if (bezier !== null) {
-                                this.voronoiMinBeachLine.push(bezier);
+                                computationOutput.voronoiMinBeachLine.push(bezier);
                             }
                         }
                     }
                 });
             }
-            this.delaunayMin = VoronoiDelaunay.computeDelaunay(voronoiMin).getLineSegments();
+            computationOutput.delaunayMin = VoronoiDelaunay.computeDelaunay(voronoiMin).getLineSegments();
         }
 
         if (
             DrawingController.displayAlphaHull ||
             DrawingController.displayAlphaShape ||
-            voronoiState.showTriangles ||
-            voronoiState.showDelaunayMax ||
-            voronoiState.showVoronoiMax ||
+            alphaShapesInputState.showTriangles ||
+            alphaShapesInputState.showDelaunayMax ||
+            alphaShapesInputState.showVoronoiMax ||
             DrawingController.displaySmallestCircle
         ) {
             const skyumResults = Skyum.computeVoronoiDiagram(convexHull);
 
-            this.voronoiMaxTriangles = skyumResults.voronoiTriangles.map((triangle) =>
+            computationOutput.voronoiMaxTriangles = skyumResults.voronoiTriangles.map((triangle) =>
                 triangle.getLineSegments()
             );
-            this.voronoiMaxCircles = skyumResults.voronoiTriangles.map((triangle) =>
+            computationOutput.voronoiMaxCircles = skyumResults.voronoiTriangles.map((triangle) =>
                 triangle.getCircumcircle().crop(rect)!
             );
             const voronoiMaxCenters = skyumResults.voronoiTriangles.map((triangle) => {
                 const center = triangle.getCircumcircle().center;
                 return rect.containsPoint(center) ? center : null;
             });
-            this.voronoiMaxCenters = voronoiMaxCenters.filter((center) => center !== null);
+            computationOutput.voronoiMaxCenters = voronoiMaxCenters.filter((center) => center !== null);
 
             if (skyumResults.smallestCircle !== null) {
-                this.smallestCircle = skyumResults.smallestCircle.crop(rect)!;
+                computationOutput.smallestCircle = skyumResults.smallestCircle.crop(rect)!;
             }
 
             voronoiMax = skyumResults.voronoiDiagram;
             voronoiMax.getLineSegments().forEach((lineSegment) => {
                 const cropped = lineSegment.crop(rect);
                 if (cropped !== null) {
-                    this.voronoiMax.push(cropped);
+                    computationOutput.voronoiMax.push(cropped);
                 }
             });
-            this.delaunayMax = VoronoiDelaunay.computeDelaunay(voronoiMax).getLineSegments();
+            computationOutput.delaunayMax = VoronoiDelaunay.computeDelaunay(voronoiMax).getLineSegments();
         }
 
         if (DrawingController.displayAlphaHull || DrawingController.displayAlphaShape) {
             if (voronoiMin !== null && voronoiMax !== null) {
                 const spectra = AlphaShape.computeShapeSpectra(voronoiMin, voronoiMax);
-                this.significantAlphas = spectra.significantAlphas;
+                computationOutput.significantAlphas = spectra.significantAlphas;
 
                 const alphaShape = AlphaShape.computeAlphaShape(
-                    alpha,
+                    alphaShapesInputState.alpha,
                     spectra.vertexSpectrum,
                     spectra.edgeSpectrum
                 );
-                this.alphaShapeEdges = alphaShape.edges;
-                this.alphaShapeVertices = alphaShape.vertices;
+                computationOutput.alphaShapeEdges = alphaShape.edges;
+                computationOutput.alphaShapeVertices = alphaShape.vertices;
 
-                const alphaHull = AlphaShape.computeAlphaHull(alpha, spectra.edgeSpectrum);
+                const alphaHull = AlphaShape.computeAlphaHull(alphaShapesInputState.alpha, spectra.edgeSpectrum);
 
                 alphaHull.forEach((hullElement) => {
                     if (hullElement instanceof Circle) {
                         const path = hullElement.crop(rect);
                         if (path !== null) {
-                            this.alphaHull.push(path);
+                            computationOutput.alphaHull.push(path);
                         }
                     } else if (hullElement instanceof HalfPlane) {
                         const path = hullElement.crop(rect);
                         if (path !== null) {
-                            this.alphaHull.push([path]);
+                            computationOutput.alphaHull.push([path]);
                         }
                     }
                 });
             }
         }
+
+        return computationOutput;
     }
 }

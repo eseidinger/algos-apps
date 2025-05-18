@@ -4,33 +4,40 @@
 <mat-dialog-content class="content">
   <div class="container">
     <div>
-      <mat-checkbox [checked]="voronoiState?.showVoronoiMin" (change)="onVoronoiMinChange($event.checked)">Show
-        Voronoi
-        Min</mat-checkbox>
+      <mat-checkbox [checked]="alphaShapesInputState?.showVoronoiMin" (change)="onVoronoiMinChange($event.checked)">Show
+        Voronoi Min</mat-checkbox>
     </div>
     <div>
-      <mat-checkbox [checked]="voronoiState?.showVoronoiMax" (change)="onVoronoiMaxChange($event.checked)">Show
-        Voronoi
-        Max</mat-checkbox>
+      <mat-checkbox [checked]="alphaShapesInputState?.showVoronoiMax" (change)="onVoronoiMaxChange($event.checked)">Show
+        Voronoi Max</mat-checkbox>
     </div>
     <div>
-      <mat-checkbox [checked]="voronoiState?.showDelaunayMin" (change)="onDelaunayMinChange($event.checked)">Show
-        Delaunay
-        Min</mat-checkbox>
+      <mat-checkbox [checked]="alphaShapesInputState?.showDelaunayMin" (change)="onDelaunayMinChange($event.checked)">Show
+        Delaunay Min</mat-checkbox>
     </div>
     <div>
-      <mat-checkbox [checked]="voronoiState?.showDelaunayMax" (change)="onDelaunayMaxChange($event.checked)">Show
-        Delaunay
-        Max</mat-checkbox>
+      <mat-checkbox [checked]="alphaShapesInputState?.showDelaunayMax" (change)="onDelaunayMaxChange($event.checked)">Show
+        Delaunay Max</mat-checkbox>
     </div>
     <div>
-      <mat-checkbox [checked]="voronoiState?.showBeachLine" (change)="onBeachLineChange($event.checked)">Show
-        Beach Line</mat-checkbox>
+      <mat-checkbox [checked]="alphaShapesInputState?.showBeachLine" (change)="onBeachLineChange($event.checked)">Show
+        Voronoi Min Beach Line</mat-checkbox>
     </div>
     <mat-slider min="0" max="100" step="1" class="slider">
-      <input matSliderThumb (input)="onSweepLinePercentageChange($event)"
-        [value]="voronoiState?.sweepLinePercentage" />
+      <input matSliderThumb (input)="onSweepLinePercentageChange($event)" [value]="alphaShapesInputState?.sweepLinePercentage" />
     </mat-slider>
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showTriangles" (change)="onShowTrianglesChanged($event.checked)">Show
+        Voronoi Max Triangles</mat-checkbox>
+    </div>
+    <mat-form-field>
+      <mat-label>Selected Triangle</mat-label>
+      <mat-select (valueChange)="onSelectedTriangleChanged($event)" [value]="alphaShapesInputState?.selectedTriangle">
+        @for (option of getTriangleOptions(); track option) {
+        <mat-option [value]="option">{{option}}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions>
