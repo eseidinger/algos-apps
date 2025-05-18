@@ -18,9 +18,12 @@ export class AlphaShapesService {
     sweepLinePercentage: 0,
     showDelaunayMax: false,
     showDelaunayMin: false,
+    showAlphaShape: false,
+    showAlphaHull: false,
+    showAlphaDisc: false,
+    showSmallestCircle: false,
+    showConvexHull: true,
     alpha: 75,
-    alphaMin: -100,
-    alphaMax: 100,
     alphaDiscCenter: new Vector(10, 10),
     points: [],
   });
@@ -37,9 +40,10 @@ export class AlphaShapesService {
 
   setAlpha(sliderValue: number) {
     const currentState = this.alphaShapesInputStateSource.getValue();
-    if (sliderValue <= currentState.alphaMin) {
+    const { min, max } = this.getAlphaMinMax();
+    if (sliderValue <= min) {
       currentState.alpha = -Infinity;
-    } else if (sliderValue >= currentState.alphaMax) {
+    } else if (sliderValue >= max) {
       currentState.alpha = Infinity;
     } else {
       currentState.alpha = sliderValue;

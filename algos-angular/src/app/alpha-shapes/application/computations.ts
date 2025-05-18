@@ -27,7 +27,7 @@ import { VoronoiDelaunay } from '../algo/voronoidelaunay';
 import { Skyum } from '../algo/skyum';
 import { Fortune, FortuneArc, FortuneBreakpoint } from '../algo/fortune';
 import { ConvexHull } from '../algo/convexhull';
-import { DrawingController, AlphaShapesInputState } from '../canvas/drawingcontroller';
+import { AlphaShapesInputState } from '../canvas/drawingcontroller';
 import { EdgeList } from '../ds/dcel';
 
 export interface ComputationOutput {
@@ -91,8 +91,8 @@ export class Computations {
         let voronoiMax: EdgeList | null = null;
 
         if (
-            DrawingController.displayAlphaHull ||
-            DrawingController.displayAlphaShape ||
+            alphaShapesInputState.showAlphaHull ||
+            alphaShapesInputState.showAlphaShape ||
             alphaShapesInputState.showBeachLine ||
             alphaShapesInputState.showDelaunayMin ||
             alphaShapesInputState.showVoronoiMin
@@ -139,12 +139,12 @@ export class Computations {
         }
 
         if (
-            DrawingController.displayAlphaHull ||
-            DrawingController.displayAlphaShape ||
+            alphaShapesInputState.showAlphaHull ||
+            alphaShapesInputState.showAlphaShape ||
             alphaShapesInputState.showTriangles ||
             alphaShapesInputState.showDelaunayMax ||
             alphaShapesInputState.showVoronoiMax ||
-            DrawingController.displaySmallestCircle
+            alphaShapesInputState.showSmallestCircle
         ) {
             const skyumResults = Skyum.computeVoronoiDiagram(convexHull);
 
@@ -174,7 +174,7 @@ export class Computations {
             computationOutput.delaunayMax = VoronoiDelaunay.computeDelaunay(voronoiMax).getLineSegments();
         }
 
-        if (DrawingController.displayAlphaHull || DrawingController.displayAlphaShape) {
+        if (alphaShapesInputState.showAlphaHull || alphaShapesInputState.showAlphaShape) {
             if (voronoiMin !== null && voronoiMax !== null) {
                 const spectra = AlphaShape.computeShapeSpectra(voronoiMin, voronoiMax);
                 computationOutput.significantAlphas = spectra.significantAlphas;

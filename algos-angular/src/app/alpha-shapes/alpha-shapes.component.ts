@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 import { Apps, getAppName } from '../app.routes';
 import { Subject, takeUntil } from 'rxjs';
 import { AlphaShapesSurfaceComponent } from "./alpha-shapes-surface/alpha-shapes-surface.component";
+import { AlphaShapesDialogComponent } from './alpha-shapes-dialog/alpha-shapes-dialog.component';
 
 @Component({
   selector: 'app-alpha-shapes',
@@ -24,7 +25,8 @@ import { AlphaShapesSurfaceComponent } from "./alpha-shapes-surface/alpha-shapes
 })
 export class AlphaShapesComponent implements OnInit, OnDestroy {
   readonly dialog = inject(MatDialog);
-  dialogRef: MatDialogRef<VoronoiDialogComponent> | undefined = undefined;
+  voronoiDialogRef: MatDialogRef<VoronoiDialogComponent> | undefined = undefined;
+  alphaShapesDialogRef: MatDialogRef<AlphaShapesDialogComponent> | undefined = undefined;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -36,12 +38,19 @@ export class AlphaShapesComponent implements OnInit, OnDestroy {
     this.headerEventService.headerEvent$
       .pipe(takeUntil(this.destroy$))
       .subscribe((event) => {
-        if (event === HeaderEvent.VoronoiDialog && !this.dialogRef) {
-          this.dialogRef = this.dialog.open(VoronoiDialogComponent, {
+        if (event === HeaderEvent.VoronoiDialog && !this.voronoiDialogRef) {
+          this.voronoiDialogRef = this.dialog.open(VoronoiDialogComponent, {
             hasBackdrop: false,
           });
-          this.dialogRef.afterClosed().subscribe(() => {
-            this.dialogRef = undefined;
+          this.voronoiDialogRef.afterClosed().subscribe(() => {
+            this.voronoiDialogRef = undefined;
+          });
+        } else if (event === HeaderEvent.AlphaShapesDialog && !this.voronoiDialogRef) {
+          this.alphaShapesDialogRef = this.dialog.open(AlphaShapesDialogComponent, {
+            hasBackdrop: false,
+          });
+          this.alphaShapesDialogRef.afterClosed().subscribe(() => {
+            this.voronoiDialogRef = undefined;
           });
         }
       });
@@ -49,8 +58,8 @@ export class AlphaShapesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         if (getAppName(this.router.url.split('/')[1]) !== Apps.ALPHA_SHAPES) {
-          if (this.dialogRef) {
-            this.dialogRef.close();
+          if (this.voronoiDialogRef) {
+            this.voronoiDialogRef.close();
           }
         }
       });

@@ -31,4 +31,8 @@ export class AppComponent implements OnInit {
   openVoronoiDialog() {
     this.headerEventService.emitHeaderEvent(HeaderEvent.VoronoiDialog);
   }
+
+  openAlphaShapesDialog() {
+    this.headerEventService.emitHeaderEvent(HeaderEvent.AlphaShapesDialog);
+  }
 }

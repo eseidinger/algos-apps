@@ -1,0 +1,36 @@
+<h2 mat-dialog-title cdkDrag cdkDragRootElement=".cdk-overlay-pane" cdkDragHandle class="drag-handle">
+  Alpha Shapes Parameters
+</h2>
+<mat-dialog-content class="content">
+  <div class="container">
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showAlphaShape" (change)="onAlphaShapeChange($event.checked)">Show
+        Alpha Shape</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showAlphaHull" (change)="onAlphaHullChange($event.checked)">Show
+        Alpha Hull</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showAlphaDisc" (change)="onAlphaDiscChange($event.checked)">Show
+        Alpha Disc</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showSmallestCircle" (change)="onSmallestCircleChange($event.checked)">Show
+        Smallest Circle</mat-checkbox>
+    </div>
+    <div>
+      <mat-checkbox [checked]="alphaShapesInputState?.showConvexHull" (change)="onConvexHullChange($event.checked)">Show
+        Convex Hull</mat-checkbox>
+    </div>
+    <mat-slider min="{{getAlphaMin()}}" max="{{getAlphaMax()}}" step="{{getAlphaStep()}}" class="slider">
+      <input matSliderThumb (input)="onAlphaChange($event)" [value]="alphaShapesInputState?.alpha" />
+    </mat-slider>
+    <div>
+      Alpha: {{alphaShapesInputState?.alpha}}
+    </div>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button mat-button (click)="onCloseClick()">Close</button>
+</mat-dialog-actions>

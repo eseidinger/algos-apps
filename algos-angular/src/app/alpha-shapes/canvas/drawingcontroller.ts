@@ -29,9 +29,12 @@ export interface AlphaShapesInputState {
     sweepLinePercentage: number;
     showDelaunayMax: boolean;
     showDelaunayMin: boolean;
+    showAlphaShape: boolean;
+    showAlphaHull: boolean;
+    showAlphaDisc: boolean;
+    showSmallestCircle: boolean;
+    showConvexHull: boolean;
     alpha: number;
-    alphaMin: number;
-    alphaMax: number;
     alphaDiscCenter: Vector;
     points: Vector[];
 }
@@ -63,14 +66,6 @@ export class DrawingController {
     static alphaHullColor = '#008000';
     static alphaHullOpacity = 0.2;
 
-    // Variables to control which diagrams are displayed
-    static displayAlphaShape = false;
-    static displayAlphaHull = false;
-    static displayAlphaDisc = false;
-    static displaySmallestCircle = false;
-    static displayConvexHull = true;
-
-
     /**
      * Draw diagrams using the given canvas drawer.
      *
@@ -78,7 +73,7 @@ export class DrawingController {
      */
     static drawDiagrams(canvasDrawer: Drawer, canvasWidth: number, canvasHeight: number, alphaShapesInputState: AlphaShapesInputState, computationOutput: ComputationOutput): void {
         const sweepLinePosition = Math.round(alphaShapesInputState.sweepLinePercentage / 100 * canvasHeight);
-        if (this.displayAlphaHull) {
+        if (alphaShapesInputState.showAlphaHull) {
             this.drawAlphaHull(canvasDrawer, computationOutput, alphaShapesInputState);
         }
         if (alphaShapesInputState.showDelaunayMin) {
@@ -155,17 +150,17 @@ export class DrawingController {
                 );
             }
         }
-        if (this.displaySmallestCircle) {
+        if (alphaShapesInputState.showSmallestCircle) {
             canvasDrawer.drawPathElements(computationOutput.smallestCircle, 1, 'black', 1);
         }
-        if (this.displayConvexHull) {
+        if (alphaShapesInputState.showConvexHull) {
             canvasDrawer.drawPathElements(computationOutput.convexHull, 1, 'black', 1);
         }
-        if (this.displayAlphaShape) {
+        if (alphaShapesInputState.showAlphaShape) {
             this.drawAlphaShape(canvasDrawer, computationOutput);
         }
         canvasDrawer.drawPoints(alphaShapesInputState.points, 5, 'black', 1);
-        if (this.displayAlphaDisc) {
+        if (alphaShapesInputState.showAlphaDisc) {
             this.drawAlphaDisc(canvasDrawer, alphaShapesInputState);
         }
     }
