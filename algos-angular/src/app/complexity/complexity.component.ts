@@ -1,15 +1,26 @@
 import { Component } from '@angular/core';
-import { Attribute, Condition, Part, Variant } from './tree/variant-node';
-import { constructVariantTree, printTree } from './tree/tree-utils';
+import { Attribute, Condition, Part, Variant, VariantNode } from './tree/variant-node';
+import { constructVariantTree } from './tree/tree-utils';
 import { BooleanExpression } from './tree/boolean-expression';
+import { MatTreeModule } from '@angular/material/tree';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-complexity',
-  imports: [],
+  imports: [MatTreeModule, MatIconModule],
   templateUrl: './complexity.component.html',
   styleUrl: './complexity.component.scss'
 })
 export class ComplexityComponent {
+  childrenAccessor = (node: VariantNode) => node.children;
+  
+  dataSource: VariantNode[] = [];
+
+  hasChild = (_: number, node: VariantNode) => node.children.length > 0;
+
+  constructor() {
+
+  }
 
   ngOnInit() {
     const part1 = new Part('Part 1', new Condition(new BooleanExpression('B & (A | C)')));
@@ -24,18 +35,6 @@ export class ComplexityComponent {
       [variant1, variant2, variant3], ["A", "B", "C"], [part1, part2]
     );
 
-    console.log("Before collapsing:");
-    printTree(tree);
-
-    tree.collapse(["B"], ["C"]);
-    console.log("\nAfter collapsing:");
-    printTree(tree);
-    console.log("\n");
-
-    console.log("Tree with only two symbols:");
-    const tree2 = constructVariantTree(
-      [variant1, variant2, variant3], ["A", "B"], [part1, part2]
-    );
-    printTree(tree2);
+    this.dataSource = [tree];
   }
 }
