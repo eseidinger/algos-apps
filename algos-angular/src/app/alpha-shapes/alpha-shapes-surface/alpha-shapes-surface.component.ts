@@ -26,8 +26,6 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   maxPointDist = 5;
   maxPointDistTouch = 25;
 
-  moveAlphaDisc = false;
-
   constructor(
     private alphaShapesService: AlphaShapesService,
   ) { }
@@ -81,7 +79,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   handleDragStart(event: MouseEvent) {
     if (!this.dragState.selected) {
       const position = this.getPosition(event);
-      if (this.moveAlphaDisc) {
+      if (this.alphaShapesInputState?.showAlphaDisc) {
         this.dragStartAlphaDisc(position);
       } else {
         this.dragStartPoint(position, this.maxPointDist);
@@ -93,7 +91,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   handleDragStartTouch(event: TouchEvent) {
     if (!this.dragState.selected) {
       const position = this.getPositionTouch(event);
-      if (this.moveAlphaDisc) {
+      if (this.alphaShapesInputState?.showAlphaDisc) {
         this.dragStartAlphaDisc(position);
       } else {
         this.dragStartPoint(position, this.maxPointDistTouch);
@@ -130,7 +128,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   handleDragMove(event: MouseEvent) {
     if (this.dragState.selected) {
       const position = this.getPosition(event);
-      if (this.moveAlphaDisc) {
+      if (this.alphaShapesInputState?.showAlphaDisc) {
         this.dragMoveAlphaDisc(position);
       } else {
         this.dragMovePoint(position);
@@ -142,7 +140,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
   handleDragMoveTouch(event: TouchEvent) {
     if (this.dragState.selected) {
       const position = this.getPositionTouch(event);
-      if (this.moveAlphaDisc) {
+      if (this.alphaShapesInputState?.showAlphaDisc) {
         this.dragMoveAlphaDisc(position);
       } else {
         this.dragMovePoint(position);
@@ -171,7 +169,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
 
   handleDragEnd(event: MouseEvent) {
     const position = this.getPosition(event);
-    if (this.moveAlphaDisc) {
+    if (this.alphaShapesInputState?.showAlphaDisc) {
       this.dragEndAlphaDisc(position);
     } else {
       this.dragEndPoint(position, this.minMoveDist);
@@ -181,7 +179,7 @@ export class AlphaShapesSurfaceComponent implements AfterViewInit {
 
   handleDragEndTouch(event: TouchEvent) {
     const position = this.getPositionTouch(event);
-    if (this.moveAlphaDisc) {
+    if (this.alphaShapesInputState?.showAlphaDisc) {
       this.dragEndAlphaDisc(position);
     } else {
       this.dragEndPoint(position, this.minMoveDistTouch);
