@@ -6,12 +6,9 @@ The conditionals are used to test if a variant satisfies a condition and to get 
 in the condition.
 """
 
-from copy import deepcopy
-from itertools import product
 from typing import Generic, Optional, Protocol, Self, TypeVar, Any
 from sympy import symbols, Symbol  # type: ignore
-from sympy.logic import SOPform  # type: ignore
-from sympy.logic.boolalg import Boolean, BooleanTrue, Or, to_dnf  # type: ignore
+from sympy.logic.boolalg import Boolean, Or, to_dnf  # type: ignore
 
 
 class Attribute:  # pylint: disable=too-few-public-methods
@@ -45,7 +42,7 @@ class Variant:
         """Return the attributes sorted by symbol"""
         return sorted(self.attributes, key=lambda x: str(x.symbol))
 
-    def to_dict(self):
+    def to_dict(self) -> dict[Symbol, Optional[bool]]:
         """Return a dictionary of the attributes"""
         return {
             attr.symbol: attr.value
@@ -97,7 +94,10 @@ class Variant:
         """
         new_variants = []
         for value in values:
-            new_variant = deepcopy(self)
+            new_attributes = [
+                Attribute(attr.symbol, attr.value) for attr in self.attributes
+            ]
+            new_variant = Variant(new_attributes)
             for attribute in new_variant.attributes:
                 if attribute.symbol in next_symbols:
                     index = next_symbols.index(attribute.symbol)
@@ -168,7 +168,7 @@ class Condition:  # pylint: disable=too-few-public-methods
         A = True, B = None, C = False
         because ignoring the value of B, the relevant expression is A | C
         """
-        return variant.solves(self)
+        return self.condition.subs(variant.to_dict())
 
     def to_possible_variants(self, relevant_symbols: list[Symbol]) -> list[Variant]:
         """Return the possible variants of the condition
@@ -351,14 +351,6 @@ class VariantNode(Generic[T]):
         symbols_flat = [sym for sublist in symbol_order for sym in sublist]
         return Variant([Attribute(sym, None) for sym in symbols_flat])
 
-    @staticmethod
-    def bool_from_integer(value: int, nof_bits: int) -> list[bool]:
-        """Convert an integer to a list of booleans
-        The list is the binary representation of the integer
-        The length of the list is nof_bits
-        """
-        return [bool(int(bit)) for bit in bin(value)[2:].zfill(nof_bits)]
-
     def _create_child_nodes(
         self,
         symbol_order: list[list[Symbol]],
@@ -369,22 +361,19 @@ class VariantNode(Generic[T]):
         next_symbols = self._get_next_symbols(symbol_order)
         if len(next_symbols) == 0:
             return
-        nof_variants = 2 ** len(next_symbols)
-        bool_values = [
-            VariantNode.bool_from_integer(i, len(next_symbols))
-            for i in range(nof_variants)
-        ]
+        bool_values = self._get_next_possible_values(
+            next_symbols, possible_variants
+        )
         variants = self.variant.derive_variants(next_symbols, bool_values)
         for variant in variants:
-            if variant.is_possible(possible_variants):
-                child = VariantNode(
-                    next_symbols,
-                    variant,
-                    symbol_order,
-                    possible_variants,
-                    all_conditionals,
-                )
-                self._add_child(child)
+            child = VariantNode(
+                next_symbols,
+                variant,
+                symbol_order,
+                possible_variants,
+                all_conditionals,
+            )
+            self._add_child(child)
 
     def _get_next_symbols(self, symbol_order: list[list[Symbol]]) -> list[Symbol]:
         """Return the next symbol in the symbol order"""
@@ -395,6 +384,20 @@ class VariantNode(Generic[T]):
             return symbol_order[index + 1]
         except IndexError:
             return []
+
+    def _get_next_possible_values(
+        self, next_symbols: list[Symbol], possible_variants: list[Variant]
+    ) -> list[list[Optional[bool]]]:
+        """Get the next possible values for the next symbols"""
+        next_possible_values = set()
+        for variant in possible_variants:
+            if not variant.is_derived_from_or_equal(self.variant):
+                # Only consider variants that are derived from the current variant
+                continue
+            variant_dict = variant.to_dict()
+            next_values = [variant_dict.get(sym, None) for sym in next_symbols]
+            next_possible_values.add(tuple(next_values))
+        return [list(values) for values in next_possible_values]
 
     def _add_child(self, child):
         """Add a child to the node"""

@@ -3,7 +3,7 @@ Test the functionality of the VariantTree module.
 This module contains tests for the VariantTree class and its methods."""
 
 from sympy import symbols
-from sympy.logic.boolalg import BooleanTrue, to_dnf, truth_table, term_to_integer
+from sympy.logic.boolalg import to_dnf, truth_table, term_to_integer
 
 from py_algos_eseidinger.complexity.varianttree import (
     Attribute,
@@ -341,11 +341,11 @@ class TestVariantNode:
         leafs = tree.get_leafs()
         assert len(leafs) == 3
         assert leafs[0].variant == variant_3
-        assert leafs[1].variant == variant_2
-        assert leafs[2].variant == variant_1
+        assert leafs[1].variant == variant_1
+        assert leafs[2].variant == variant_2
         assert leafs[0].conditionals == [part_1, part_2]
-        assert leafs[1].conditionals == [part_2]
-        assert leafs[2].conditionals == [part_1]
+        assert leafs[1].conditionals == [part_1]
+        assert leafs[2].conditionals == [part_2]
         assert leafs[0].current_symbols == [B, C]
         assert leafs[1].current_symbols == [B, C]
         assert leafs[2].current_symbols == [B, C]
