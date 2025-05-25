@@ -22,8 +22,12 @@ class Attribute:  # pylint: disable=too-few-public-methods
         self.value = value
 
     def __str__(self):
-        return f"{self.symbol}: {self.value}"
-
+        if self.value is None:
+            return f"!{self.symbol}"
+        if self.value is True:
+            return str(self.symbol)
+        if self.value is False:
+            return f"~{self.symbol}"
 
 class Variant:
     """
@@ -519,9 +523,21 @@ class VariantNode(Generic[T]):
             return f"~{sym}"
         return str(sym)
 
+    def symbols_to_string(self) -> str:
+        """Convert the current symbols to a string"""
+        return ", ".join(map(self._symbol_to_string, self.current_symbols))
+    
+    def to_edge_list(self) -> list[tuple[str, str]]:
+        """Convert the tree to an edge list representation"""
+        edges = []
+        for child in self.children:
+            edges.append((str(self.variant), str(child.variant)))
+            edges.extend(child.to_edge_list())
+        return edges
+
     def __str__(self):
         conditional_str = ", ".join(map(str, self.conditionals))
-        symbol_strings = ", ".join(map(self._symbol_to_string, self.current_symbols))
+        symbol_strings = self.symbols_to_string()
         return f"[{symbol_strings}] -> {self.variant} -> [{conditional_str}]"
 
 

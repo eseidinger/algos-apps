@@ -49,11 +49,11 @@ class TestAttribute:
         """
         A = symbols("A")  # pylint: disable=invalid-name
         attribute = Attribute(A, True)
-        assert str(attribute) == "A: True"
+        assert str(attribute) == "A"
         attribute = Attribute(A, False)
-        assert str(attribute) == "A: False"
+        assert str(attribute) == "~A"
         attribute = Attribute(A, None)
-        assert str(attribute) == "A: None"
+        assert str(attribute) == "!A"
 
 
 class TestVariant:
@@ -68,7 +68,7 @@ class TestVariant:
         A, B, C = symbols("A, B, C")  # pylint: disable=invalid-name
         attributes = [Attribute(A, True), Attribute(B, False), Attribute(C, None)]
         variant = Variant(attributes)
-        assert str(variant) == "{A: True, B: False, C: None}"
+        assert str(variant) == "{A, ~B, !C}"
 
     def test_get_attributes(self):
         """Test the get_attributes method of the Variant class.
@@ -352,3 +352,30 @@ class TestVariantNode:
         assert leafs[0].parent.current_symbols == [A]
         assert leafs[1].parent.current_symbols == [A]
         assert leafs[2].parent.current_symbols == [A]
+
+    def test_symbols_to_string(self):
+        """Test the symbols_to_string method of the VariantNode class."""
+        A, B, C = symbols("A, B, C")
+        symbol_order = [[A, B], [C]]
+        root_variant = VariantNode.create_root_variant(symbol_order)
+        variant = Variant([Attribute(A, True), Attribute(B, False), Attribute(C, None)])
+        node = VariantNode([A, B], variant, symbol_order, [variant], [])
+        # Should show 'A, ~B' because A=True, B=False
+        assert node.symbols_to_string() == "A, ~B"
+
+    def test_to_edge_list(self):
+        """Test the to_edge_list method of the VariantNode class."""
+        A, B = symbols("A, B")
+        symbol_order = [[A], [B]]
+        root_variant = VariantNode.create_root_variant(symbol_order)
+        variant1 = Variant([Attribute(A, True), Attribute(B, True)])
+        variant2 = Variant([Attribute(A, True), Attribute(B, False)])
+        possible_variants = [variant1, variant2]
+        tree = VariantNode([], root_variant, symbol_order, possible_variants, [])
+        edges = tree.to_edge_list()
+        # The tree should have edges from root to A, and from A to B and ~B
+        edge_labels = set(edges)
+        # The root node has no symbols, so ''
+        assert ("{!A, !B}", "{A, !B}") in edge_labels
+        assert ("{A, !B}", "{A, B}") in edge_labels
+        assert ("{A, !B}", "{A, ~B}") in edge_labels
