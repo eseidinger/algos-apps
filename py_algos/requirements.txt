@@ -1,4 +1,8 @@
 sympy
+networkx
+matplotlib
+pygraphviz
+jupyter
 mypy
 pylint
 build
