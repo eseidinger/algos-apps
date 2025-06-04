@@ -29,6 +29,7 @@ class Attribute:  # pylint: disable=too-few-public-methods
         if self.value is False:
             return f"~{self.symbol}"
 
+
 class Variant:
     """
     A class to represent a variant.
@@ -56,6 +57,10 @@ class Variant:
 
     def __eq__(self, value):
         return isinstance(value, Variant) and self.to_dict() == value.to_dict()
+    
+    def __hash__(self):
+        """Return a hash of the variant based on its attributes"""
+        return hash(tuple((attr.symbol, attr.value) for attr in self.get_sorted_attributes()))
 
     def is_derived_from_or_equal(self, other_variant: Self) -> bool:
         """Return True if the variant is derived from another variant
@@ -147,6 +152,7 @@ class Variant:
             self.is_derived_from_or_equal(possible_variant)
             for possible_variant in possible_variants
         )
+
 
 class Condition:  # pylint: disable=too-few-public-methods
     """
@@ -365,9 +371,7 @@ class VariantNode(Generic[T]):
         next_symbols = self._get_next_symbols(symbol_order)
         if len(next_symbols) == 0:
             return
-        bool_values = self._get_next_possible_values(
-            next_symbols, possible_variants
-        )
+        bool_values = self._get_next_possible_values(next_symbols, possible_variants)
         variants = self.variant.derive_variants(next_symbols, bool_values)
         for variant in variants:
             child = VariantNode(
@@ -526,14 +530,12 @@ class VariantNode(Generic[T]):
     def symbols_to_string(self) -> str:
         """Convert the current symbols to a string"""
         return ", ".join(map(self._symbol_to_string, self.current_symbols))
-    
-    def to_edge_list(self) -> list[tuple[str, str]]:
-        """Convert the tree to an edge list representation"""
-        edges = []
-        for child in self.children:
-            edges.append((str(self.variant), str(child.variant)))
-            edges.extend(child.to_edge_list())
-        return edges
+
+    def get_height(self) -> int:
+        """Get the height of the tree"""
+        if len(self.children) == 0:
+            return 1
+        return 1 + max(child.get_height() for child in self.children)
 
     def __str__(self):
         conditional_str = ", ".join(map(str, self.conditionals))

@@ -357,25 +357,27 @@ class TestVariantNode:
         """Test the symbols_to_string method of the VariantNode class."""
         A, B, C = symbols("A, B, C")
         symbol_order = [[A, B], [C]]
-        root_variant = VariantNode.create_root_variant(symbol_order)
         variant = Variant([Attribute(A, True), Attribute(B, False), Attribute(C, None)])
         node = VariantNode([A, B], variant, symbol_order, [variant], [])
         # Should show 'A, ~B' because A=True, B=False
         assert node.symbols_to_string() == "A, ~B"
 
-    def test_to_edge_list(self):
-        """Test the to_edge_list method of the VariantNode class."""
-        A, B = symbols("A, B")
-        symbol_order = [[A], [B]]
+    def test_get_height(self):
+        """Test the get_height method of the VariantNode class."""
+        A, B, C = symbols("A, B, C")
+        symbol_order = [[A], [B, C]]
         root_variant = VariantNode.create_root_variant(symbol_order)
-        variant1 = Variant([Attribute(A, True), Attribute(B, True)])
-        variant2 = Variant([Attribute(A, True), Attribute(B, False)])
-        possible_variants = [variant1, variant2]
-        tree = VariantNode([], root_variant, symbol_order, possible_variants, [])
-        edges = tree.to_edge_list()
-        # The tree should have edges from root to A, and from A to B and ~B
-        edge_labels = set(edges)
-        # The root node has no symbols, so ''
-        assert ("{!A, !B}", "{A, !B}") in edge_labels
-        assert ("{A, !B}", "{A, B}") in edge_labels
-        assert ("{A, !B}", "{A, ~B}") in edge_labels
+        variant_1 = Variant(
+            [Attribute(A, True), Attribute(B, True), Attribute(C, False)]
+        )
+        variant_2 = Variant(
+            [Attribute(A, True), Attribute(B, False), Attribute(C, True)]
+        )
+        variant_3 = Variant(
+            [Attribute(A, False), Attribute(B, True), Attribute(C, True)]
+        )
+        possible_variants = [variant_1, variant_2, variant_3]
+        root_node = VariantNode(
+            [], root_variant, symbol_order, possible_variants, []
+        )
+        assert root_node.get_height() == 3
